@@ -1,0 +1,73 @@
+{
+  "content": [
+    {
+      "content": null,
+      "created": "2022-05-14T23:58:05.405008Z",
+      "format": null,
+      "last_modified": "2022-05-14T23:56:55.071762Z",
+      "mimetype": "text/x-python",
+      "name": "interact.py",
+      "path": "qtview/interact.py",
+      "size": 7631,
+      "type": "file",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2022-05-14T23:58:05.401008Z",
+      "format": null,
+      "last_modified": "2022-05-14T23:56:55.071762Z",
+      "mimetype": "text/x-python",
+      "name": "data.py",
+      "path": "qtview/data.py",
+      "size": 10893,
+      "type": "file",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2022-05-14T23:58:05.405008Z",
+      "format": null,
+      "last_modified": "2022-05-14T23:56:55.071762Z",
+      "mimetype": "text/x-python",
+      "name": "plot.py",
+      "path": "qtview/plot.py",
+      "size": 5681,
+      "type": "file",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2022-05-14T23:58:05.401008Z",
+      "format": null,
+      "last_modified": "2022-05-14T23:56:55.071762Z",
+      "mimetype": "text/x-python",
+      "name": "__init__.py",
+      "path": "qtview/__init__.py",
+      "size": 86,
+      "type": "file",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2022-05-14T23:58:05.405008Z",
+      "format": null,
+      "last_modified": "2022-05-14T23:56:55.071762Z",
+      "mimetype": "text/x-python",
+      "name": "operation.py",
+      "path": "qtview/operation.py",
+      "size": 7139,
+      "type": "file",
+      "writable": true
+    }
+  ],
+  "created": "2022-05-14T23:58:05.405008Z",
+  "format": "json",
+  "last_modified": "2022-05-14T23:58:05.405008Z",
+  "mimetype": null,
+  "name": "qtview",
+  "path": "qtview",
+  "size": null,
+  "type": "directory",
+  "writable": true
+}
