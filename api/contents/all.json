@@ -2,20 +2,20 @@
   "content": [
     {
       "content": null,
-      "created": "2022-05-14T23:36:00.463694Z",
+      "created": "2022-05-14T23:41:21.595591Z",
       "format": null,
-      "last_modified": "2022-05-14T23:35:58.787673Z",
+      "last_modified": "2022-05-14T23:41:20.147561Z",
       "mimetype": null,
       "name": "content",
       "path": "content",
-      "size": 4256,
+      "size": 129,
       "type": "file",
       "writable": true
     }
   ],
-  "created": "2022-05-14T23:36:00.463694Z",
+  "created": "2022-05-14T23:41:21.595591Z",
   "format": "json",
-  "last_modified": "2022-05-14T23:36:00.463694Z",
+  "last_modified": "2022-05-14T23:41:21.595591Z",
   "mimetype": null,
   "name": "",
   "path": "",
