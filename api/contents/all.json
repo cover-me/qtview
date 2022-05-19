@@ -2,9 +2,9 @@
   "content": [
     {
       "content": null,
-      "created": "2022-05-19T22:07:11.565655Z",
+      "created": "2022-05-19T22:30:47.100060Z",
       "format": null,
-      "last_modified": "2022-05-19T22:06:00.176573Z",
+      "last_modified": "2022-05-19T22:29:29.084076Z",
       "mimetype": null,
       "name": "test.dat",
       "path": "test.dat",
@@ -14,21 +14,21 @@
     },
     {
       "content": null,
-      "created": "2022-05-19T22:07:11.561655Z",
+      "created": "2022-05-19T22:30:47.096060Z",
       "format": null,
-      "last_modified": "2022-05-19T22:06:00.168573Z",
+      "last_modified": "2022-05-19T22:29:29.076076Z",
       "mimetype": null,
       "name": "examples.ipynb",
       "path": "examples.ipynb",
-      "size": 3108,
+      "size": 5013,
       "type": "notebook",
       "writable": true
     },
     {
       "content": null,
-      "created": "2022-05-19T22:07:11.561655Z",
+      "created": "2022-05-19T22:30:47.096060Z",
       "format": null,
-      "last_modified": "2022-05-19T22:07:11.561655Z",
+      "last_modified": "2022-05-19T22:30:47.096060Z",
       "mimetype": null,
       "name": "qtview",
       "path": "qtview",
@@ -38,9 +38,9 @@
     },
     {
       "content": null,
-      "created": "2022-05-19T22:07:11.557655Z",
+      "created": "2022-05-19T22:30:47.092060Z",
       "format": null,
-      "last_modified": "2022-05-19T22:07:09.381500Z",
+      "last_modified": "2022-05-19T22:30:45.416059Z",
       "mimetype": "text/markdown",
       "name": "README.md",
       "path": "README.md",
@@ -49,9 +49,9 @@
       "writable": true
     }
   ],
-  "created": "2022-05-19T22:07:11.561655Z",
+  "created": "2022-05-19T22:30:47.100060Z",
   "format": "json",
-  "last_modified": "2022-05-19T22:07:11.561655Z",
+  "last_modified": "2022-05-19T22:30:47.100060Z",
   "mimetype": null,
   "name": "",
   "path": "",
