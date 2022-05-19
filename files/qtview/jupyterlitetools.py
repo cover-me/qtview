@@ -95,7 +95,10 @@ async def content_to_browser(content, path, overwrite=False, encode='utf8'):
         except:
             content = base64.b64encode(content).decode('utf8')
             item_format = 'base64'
-
+            
+        if path.startswith('./'):
+            path = path[2:]
+    
         value = {
             'name': os.path.basename(path), 
             'path': path,
