@@ -31,17 +31,38 @@ def _create_kernel(x_dev, y_dev, cutoff, distr):
 
 def _get_quad(x):
     '''
-    Calculate the patch corners for pcolormesh
-    More discussion can be found here: https://cover-me.github.io/2019/02/17/Save-2d-data-as-a-figure.html, https://cover-me.github.io/2019/04/04/Save-2d-data-as-a-figure-II.html
+    Calculate patch (quadrilateral) corners for 2d plot.
+    pcolormesh() need this method for non-evenly spaced XY coordinates.
+    imshow() don't use this. It assumes XY coordinates are evenly spaced.
+    See: https://cover-me.github.io/2019/02/17/Save-2d-data-as-a-figure.html, https://cover-me.github.io/2019/04/04/Save-2d-data-as-a-figure-II.html
     '''
-    l0, l1 = x[:,[0]], x[:,[1]]
-    r1, r0 = x[:,[-2]], x[:,[-1]]
-    x = np.hstack((2*l0 - l1, x, 2*r0 - r1))
-    t0, t1 = x[0], x[1]
-    b1, b0 = x[-2], x[-1]
-    x = np.vstack([2*t0 - t1, x, 2*b0 - b1])
-    x = (x[:-1,:-1]+x[:-1,1:]+x[1:,:-1]+x[1:,1:])/4.  
-    return x
+    s1,s2 = x.shape
+    x_pad = np.full((s1+2,s2+2), np.nan)
+    x_pad[1:-1,1:-1] = x
+    
+    if s1>1:
+        b1, b2 = x_pad[1], x_pad[2]
+        t1, t2 = x_pad[-2], x_pad[-3]
+        x_pad[0] = 2*b1 - b2
+        x_pad[-1] = 2*t1 - t2
+    else:
+        x_pad[0] = x_pad[1] - 1
+        x_pad[-1] = x_pad[1] + 1
+        
+
+
+    if s2>1: 
+        l1, l2 = x_pad[:,1], x_pad[:,2]
+        r1, r2 = x_pad[:,-2], x_pad[:,-3]
+        x_pad[:,0] = 2*l1 - l2
+        x_pad[:,-1] = 2*r1 - r2
+    else:
+        x_pad[:,0] = x_pad[:,1] - 1
+        x_pad[:,-1] = x_pad[:,1] + 1
+    
+    x_quad = (x_pad[:-1,:-1]+x_pad[:-1,1:]+x_pad[1:,:-1]+x_pad[1:,1:])/4.
+    
+    return x_quad
 
 # filters
 
@@ -95,15 +116,21 @@ def lowpass(d, x_width=0.5, y_height=0.5, method='gaussian'):
     return d
 
 
-def scale(d,amp=[]):
-    for i, ai in enumerate(amp):
-        d[i] *= ai
+def scale(d,x=[1,1,1]):
+    '''
+    Scale i-th term in d by x[i]
+    '''
+    for i, j in enumerate(x):
+        d[i] *= j
     return d
 
 
-def offset(d,off=[]):
-    for i, oi in enumerate(off):
-        d[i] += oi
+def offset(d,x=[0,0,0]):
+    '''
+    Offset i-th term in d by x[i]
+    '''
+    for i, j in enumerate(x):
+        d[i] += j
     return d
 
 
@@ -162,7 +189,7 @@ def autoflip(d):
     return d
 
 
-def linecut_old(d,x=None,y=None):
+def _linecut_old(d,x=None,y=None):
     '''
     Extract data from a linecut, assume data is on grid, uniformly sampled, and autoflipped
     scipy.interpolate.interp2d is too slow, scipy.interpolate.RectBivariateSpline not good
@@ -189,28 +216,23 @@ def linecut_old(d,x=None,y=None):
 
 def linecut(d,x=None,y=None):
     '''
-    Extract data from a linecut, assume data is on grid
+    Return a slice of d with x or y. Assume XY coordinates on 2d grid.
     '''
     if (x is None and y is None) or (x is None and len(np.shape(y))>0) or (y is None and len(np.shape(x))>0):
         raise ValueError('Invalid parameters for linecut')
-    x0 = d[0][0]
-    y0 = d[1][:,0]
 
-    # horizontal linecut
-    if x is None:
-        x1 = x0
-        indy = np.abs(y0 - y).argmin()# x0 may be a non uniform array
-        y1 = np.full(len(x0), y0[indy])
-        z1 = d[2,indy,:]
-
-    # vertical linecut
+    # vcut
     if y is None:
-        y1 = y0
-        indx = np.abs(x0 - x).argmin()# x0 may be a non uniform array
-        x1 = np.full(len(y0), x0[indx])
-        z1 = d[2,:,indx]
+        x0 = d[0][0]
+        indx = np.abs(x0 - x).argmin()
+        return d[:,:,[indx]]
 
-    return np.vstack((x1,y1,z1))
+
+    # hcut
+    if x is None:
+        y0 = d[1][:,0]
+        indy = np.abs(y0 - y).argmin()
+        return d[:,[indy],:]
 
 
 def hist2d(d, z_min, z_max, bins):

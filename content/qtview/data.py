@@ -21,7 +21,7 @@ def get_opener(path_or_url):
         return open
     
 
-class Data:
+class Data2d:
     """
     Class for data loading, saving, and processing
     Data structure: d = [a1,a2,a3,...], a_i is 2d.
@@ -34,8 +34,13 @@ class Data:
             self.reset()
             
     def reset(self):
+        # values updated after load data
+        self.filename = ''
         self.raw_labels = None
         self.raw_data = None
+    
+        # values updated after process_data
+        self.columns = None
         self.labels = None
         self.data = None
         
@@ -54,16 +59,19 @@ class Data:
             self.load_dat(fpath)
         else:
             raise "Format not supported"
-        
+            
+        self.filename = os.path.split(fpath)[1]
         self.process_data(**kw)
             
-    def process_data(self,cook=None,cols=[1,0,3],**kw):
+    def process_data(self,cook=None,cols=None,**kw):
+        if cols is None:
+            cols = [1,0,3] if len(self.raw_data)>3 else [0,1,2]
+        self.columns = cols
         self.labels = [self.raw_labels[i] for i in cols]
         d = np.copy(self.raw_data[np.array(cols)])
         self.data = operation.autoflip(d)
         if cook:
             self.data = cook(self.data)
-        
         
     def load_dat(self,fpath):
         """
