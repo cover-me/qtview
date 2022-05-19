@@ -13,7 +13,7 @@ def get_default_ps():
           'cmap':'seismic','vmin':None, 'vmax':None,'plotCbar':True}
 
 def plot(fpath,**kw):
-    d = data.Data(fpath,**kw)
+    d = data.Data2d(fpath,**kw)
     plot2d(d.data,**kw)
 
 def plot2d(data,**kw):
