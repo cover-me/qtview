@@ -10,6 +10,22 @@ LAYOUT_BTN = widgets.Layout(height='25',padding='0px',margin='0px',width='100px'
 LAYOUT_LABEL = widgets.Layout(height='25px',padding='0px',width='100px')
 LAYOUT_INPUT = widgets.Layout(height='25px',padding='0px',width='100px')
 
+plt.rcParams.update({
+    'font.size': 9,
+    'axes.titlesize': 'medium',
+    'figure.titlesize': 'medium',
+    # Padding
+    'axes.labelpad': 1,
+    'axes.titlepad': 1,
+    'xtick.major.pad': 1,
+    'xtick.minor.pad': 1,
+    'ytick.major.pad': 1,
+    'ytick.minor.pad': 1,
+    # Ticks
+    'xtick.minor.visible': False,
+    'ytick.minor.visible': False,
+})
+
 class ProcessQueue:
     def __init__(self,parent):
         self.parent = parent
@@ -359,9 +375,9 @@ class Player:
         
     def init_figures(self):
         plt.ioff()
-        fig = plt.figure(figsize=(3.5,2))# main plot
-        fig_cut = plt.figure(figsize=(3.5,2))# linecuts
-        # plt.ion()# problem in jupyterlite
+        fig = plt.figure(figsize=(3,2.5))# main plot
+        fig_cut = plt.figure(figsize=(3,2.5))# linecuts
+        plt.ion()
         
         fig.canvas.mpl_connect('button_press_event', self.on_cut_pos_change)
         
@@ -496,10 +512,12 @@ class Player:
         fig.clear()
         fig_cut.clear()# is more convenient because l1 and l2 has been cleared
         self.lines = None
-        ax = fig.subplots(1,1)
+
+        ax = fig.add_axes([0.25,0.15,0.55,0.66])
+        ax_cbar = fig.add_axes([0.82,0.15,0.03,0.66])
         ax.set_title(self.d.filename)
 
-        axh = fig_cut.subplots(1,1)
+        axh = fig_cut.add_axes([0.25,0.15,0.55,0.66])
         axh.yaxis.tick_right()
         axh.tick_params(axis='x', colors='tab:blue')
         axh.tick_params(axis='y', colors='tab:blue')
@@ -518,7 +536,7 @@ class Player:
             is_xy_uniform = False
             if self.dd_plot_method.index == 0:# imshow
                 is_xy_uniform = True
-            kw = {'gamma':gm, 'vmin':v0, 'vmax':v1, 'cmap':cmap, 'xyUniform':is_xy_uniform}
+            kw = {'labels':self.d.labels,'gamma':gm, 'vmin':v0, 'vmax':v1, 'cmap':cmap, 'xyUniform':is_xy_uniform, 'plotCbar':{'cax':ax_cbar}}
             plot.plot2d(self.d.data,fig=fig,ax=ax,**kw)
             self.im = [obj for obj in ax.get_children() if isinstance(obj, mpl.image.AxesImage) or isinstance(obj,mpl.collections.QuadMesh)][0]
 
