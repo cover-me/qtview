@@ -233,10 +233,11 @@ class Player:
         if not mpl.get_backend() == 'module://ipympl.backend_nbagg':
             raise "Need ipympl backend."
             
+        
+        self.axes = None
         self.d = None
-        self.fig = None
         self.lines = None
-        self.horizontal = True# is the screen orientation horizontal or portrait  
+        self.init_figures()
         
         self.create_export_folder()
         self.operations = Operations(self)
@@ -327,12 +328,17 @@ class Player:
         # toolboxes
         toolbox1 = self.operations.ui
         toolbox2 = widgets.VBox(widget_lines,layout=toolbox1.layout)
-        
+        fig_window1 = widgets.VBox([self.figs[0].canvas])
+        fig_window2 = widgets.VBox([self.figs[1].canvas])
+     
 
         ## Top layer ui
         self.ui = widgets.Box([toolbox2,toolbox1])
-        self.out = widgets.Output()
-        display(html_sty,self.ui,self.out)
+        self.canvas = widgets.Box([fig_window1,fig_window2])
+        
+
+        
+        display(html_sty,self.ui,self.canvas)
 
     def init_columns(self,silent=True):
         old_cols = [self.dd_x.value, self.dd_y.value, self.dd_z.value]
@@ -397,26 +403,33 @@ class Player:
             
         
     def on_cut_pos_change(self,click_event):
-        if self.c_show_cuts.value:
-            ax, axh, axv = self.axes
-            if click_event.inaxes == ax:# either ax or axv
-                x, y = click_event.xdata, click_event.ydata
-                hx,hy,hz = np.copy(operation.linecut(self.d.data,y=y).reshape(3,-1))# [X, Y0, Z]
-                vx,vy,vz = np.copy(operation.linecut(self.d.data,x=x).reshape(3,-1))# [X0, Y, Z]
-                self.html_info.value = 'Cuts at (%s,%s)'%(vx[0],hy[0])# may be slightly different from x,y
+        if self.c_show_cuts.value and self.d is not None:
+            x, y = click_event.xdata, click_event.ydata
+            hx,hy,hz = np.copy(operation.linecut(self.d.data,y=y).reshape(3,-1))# [X, Y0, Z]
+            vx,vy,vz = np.copy(operation.linecut(self.d.data,x=x).reshape(3,-1))# [X0, Y, Z]
+            self.html_info.value = 'Cuts at (%s,%s)'%(vx[0],hy[0])# may be slightly different from x,y
+            ax,axh,axv = self.axes
 
-                if self.lines is None:
-                    # lines = [l1h,l1v,l2h,l2v]
-                    self.lines = ax.plot(hx,hy,'tab:blue',vx,vy,'tab:orange')
-                    self.lines += axh.plot(hx,hz,'tab:blue')  
-                    self.lines += axv.plot(vz,vy,'tab:orange')
+            if self.lines is None:
+                # lines = [l1h,l1v,l2h,l2v]
+                self.lines = ax.plot(hx,hy,'tab:blue',vx,vy,'tab:orange')
+                self.lines += axh.plot(hx,hz,'tab:blue')  
+                self.lines += axv.plot(vz,vy,'tab:orange')
 
-                else:
-                    l1h,l1v,l2h,l2v = self.lines
-                    l1h.set_data(hx,hy)
-                    l1v.set_data(vx,vy)
-                    l2h.set_data(hx,hz)
-                    l2v.set_data(vz,vy)  
+            else:
+                l1h,l1v,l2h,l2v = self.lines
+                l1h.set_data(hx,hy)
+                l1v.set_data(vx,vy)
+                l2h.set_data(hx,hz)
+                l2v.set_data(vz,vy)
+                
+                z1,z2 = hz.min(),hz.max()
+                dz = (z2-z1)/20
+                axh.set_ylim(z1-dz,z2+dz)
+                
+                z1,z2 = vz.min(),vz.max()
+                dz = (z2-z1)/20                
+                axv.set_xlim(z1-dz,z2+dz)
 
         
     def reset_cmap(self,event=None,silent=False):
@@ -446,49 +459,62 @@ class Player:
             self.slider_vlim.upper = zmax
         self.slider_vlim.observe(self.on_vlim_change,'value')
 
+
+    def init_figures(self):
+        plt.ioff()# Avoid output
+        fig = plt.figure(figsize=(5,3))# main plot
+        fig_cut = plt.figure(figsize=(5,3))# linecuts
+        plt.ion()
         
+        fig.canvas.mpl_connect('button_press_event', self.on_cut_pos_change)
+        
+        self.figs = [fig,fig_cut]
+        for i in self.figs:
+            i.canvas.header_visible = False
+            i.canvas.toolbar_visible = True
+            i.canvas.toolbar_position = 'left'
+            i.canvas.resizable = True
+            
+    
+    
     def redraw(self,event=None):
 
-        if self.fig:
-            self.fig.clear()
-            self.lines = None
-            axes = self.fig.subplots(1,2)
-        else:
-            self.fig, axes = plt.subplots(1,2,figsize=(10,3))# main plot and h linecut
-            self.fig.canvas.header_visible = False
-            self.fig.canvas.toolbar_visible = True
-            self.fig.canvas.toolbar_position = 'left'
-            self.fig.canvas.resizable = True
-            self.fig.canvas.mpl_connect('button_press_event', self.on_cut_pos_change)
-            
-        plt.subplots_adjust(wspace=0.4,bottom=0.2)
-        ax,axh = axes
+        fig,fig_cut = self.figs
+        fig.clear()
+        ax = fig.subplots(1,1)
         ax.set_title(self.d.filename)
-        
-        axh.yaxis.tick_right()
-        axh.tick_params(axis='x', colors='tab:blue')
-        axh.tick_params(axis='y', colors='tab:blue')
-        
-        axv = self.fig.add_axes(axh.get_position(), frameon=False)# ax vertical linecut
-        axv.xaxis.tick_top()
-        axv.tick_params(axis='x', colors='tab:orange')
-        axv.tick_params(axis='y', colors='tab:orange')
-        
-        self.axes = [*axes, axv]
-        
-        gm = self.slider_gamma.value
-        v0,v1 = self.slider_vlim.value
-        cmap = self.dd_cmap.value
-        is_xy_uniform = False
-        if self.dd_plot_method.index == 0:# imshow
-            is_xy_uniform = True
-        kw = {'gamma':gm, 'vmin':v0, 'vmax':v1, 'cmap':cmap, 'xyUniform':is_xy_uniform}
-        plot.plot2d(self.d.data,fig=self.fig,ax=ax,**kw)
-        self.im = [obj for obj in ax.get_children() if isinstance(obj, mpl.image.AxesImage) or isinstance(obj,mpl.collections.QuadMesh)][0]
 
-        # prepare for linecuts
-        axv.set_ylim(ax.get_ylim())
-        axh.set_xlim(ax.get_xlim())
+        if self.axes is None:
+            axh = fig_cut.subplots(1,1)
+            axh.yaxis.tick_right()
+            axh.tick_params(axis='x', colors='tab:blue')
+            axh.tick_params(axis='y', colors='tab:blue')
+
+            axv = fig_cut.add_axes(axh.get_position(), frameon=False)# ax vertical linecut
+            axv.xaxis.tick_top()
+            axv.tick_params(axis='x', colors='tab:orange')
+            axv.tick_params(axis='y', colors='tab:orange')
+            
+            self.axes = [ax, axh, axv]
+        else:
+            self.axes[0] = ax
+            for i in self.lines:
+                i.set_data([],[])
+
+        if self.d:
+            gm = self.slider_gamma.value
+            v0,v1 = self.slider_vlim.value
+            cmap = self.dd_cmap.value
+            is_xy_uniform = False
+            if self.dd_plot_method.index == 0:# imshow
+                is_xy_uniform = True
+            kw = {'gamma':gm, 'vmin':v0, 'vmax':v1, 'cmap':cmap, 'xyUniform':is_xy_uniform}
+            plot.plot2d(self.d.data,fig=fig,ax=ax,**kw)
+            self.im = [obj for obj in ax.get_children() if isinstance(obj, mpl.image.AxesImage) or isinstance(obj,mpl.collections.QuadMesh)][0]
+
+            # prepare for linecuts
+            axv.set_ylim(ax.get_ylim())
+            axh.set_xlim(ax.get_xlim())
 
         
     def on_gamma_change(self,change):
