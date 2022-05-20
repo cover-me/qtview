@@ -408,19 +408,12 @@ class Player:
             self.html_info.value = 'Cuts at (%s,%s)'%(vx[0],hy[0])# may be slightly different from x,y
             ax,axh,axv = self.axes
 
-            if self.lines is None:
-                # lines = [l1h,l1v,l2h,l2v]
-                self.lines = ax.plot(hx,hy,'tab:blue',vx,vy,'tab:orange')
-                self.lines += axh.plot(hx,hz,'tab:blue')  
-                self.lines += axv.plot(vz,vy,'tab:orange')
-
-            else:
+            if self.lines:
                 l1h,l1v,l2h,l2v = self.lines
                 l1h.set_data(hx,hy)
                 l1v.set_data(vx,vy)
                 l2h.set_data(hx,hz)
                 l2v.set_data(vz,vy)
-                
                 z1,z2 = hz.min(),hz.max()
                 dz = (z2-z1)/20
                 axh.set_ylim(z1-dz,z2+dz)
@@ -428,6 +421,11 @@ class Player:
                 z1,z2 = vz.min(),vz.max()
                 dz = (z2-z1)/20                
                 axv.set_xlim(z1-dz,z2+dz)
+            else:
+                # lines = [l1h,l1v,l2h,l2v]
+                self.lines = ax.plot(hx,hy,'tab:blue',vx,vy,'tab:orange')
+                self.lines += axh.plot(hx,hz,'tab:blue')  
+                self.lines += axv.plot(vz,vy,'tab:orange')
 
         
     def reset_cmap(self,event=None,silent=False):
@@ -469,7 +467,7 @@ class Player:
         self.figs = [fig,fig_cut]
         for i in self.figs:
             i.canvas.header_visible = False
-#             i.canvas.toolbar_visible = True
+            # i.canvas.toolbar_visible = True
             i.canvas.toolbar_position = 'left'
             i.canvas.resizable = True
             
@@ -479,28 +477,24 @@ class Player:
 
         fig,fig_cut = self.figs
         fig.clear()
+        fig_cut.clear()# is more convenient because l1 and l2 has been cleared
+        self.lines = None
         ax = fig.subplots(1,1)
         ax.set_title(self.d.filename)
 
-        if self.axes is None:
-            axh = fig_cut.subplots(1,1)
-            axh.yaxis.tick_right()
-            axh.tick_params(axis='x', colors='tab:blue')
-            axh.tick_params(axis='y', colors='tab:blue')
+        axh = fig_cut.subplots(1,1)
+        axh.yaxis.tick_right()
+        axh.tick_params(axis='x', colors='tab:blue')
+        axh.tick_params(axis='y', colors='tab:blue')
 
-            axv = fig_cut.add_axes(axh.get_position(), frameon=False)# ax vertical linecut
-            axv.xaxis.tick_top()
-            axv.tick_params(axis='x', colors='tab:orange')
-            axv.tick_params(axis='y', colors='tab:orange')
-            
-            self.axes = [ax, axh, axv]
-        else:
-            self.axes[0] = ax
-            for i in self.lines:
-                i.set_data([],[])
+        axv = fig_cut.add_axes(axh.get_position(), frameon=False)# ax vertical linecut
+        axv.xaxis.tick_top()
+        axv.tick_params(axis='x', colors='tab:orange')
+        axv.tick_params(axis='y', colors='tab:orange')
+
+        self.axes = [ax, axh, axv]
 
         if self.d:
-            ax, axh, axv = self.axes
             gm = self.slider_gamma.value
             v0,v1 = self.slider_vlim.value
             cmap = self.dd_cmap.value
