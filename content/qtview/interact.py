@@ -328,17 +328,15 @@ class Player:
         # toolboxes
         toolbox1 = self.operations.ui
         toolbox2 = widgets.VBox(widget_lines,layout=toolbox1.layout)
-        fig_window1 = widgets.VBox([self.figs[0].canvas])
-        fig_window2 = widgets.VBox([self.figs[1].canvas])
+        # fig_window1 = widgets.VBox([self.figs[0].canvas])# need plt.ioff to supress output, not compatible with jupyterLite
+        # fig_window2 = widgets.VBox([self.figs[1].canvas])# need plt.ioff to supress output, not compatible with jupyterLite
      
 
         ## Top layer ui
         self.ui = widgets.Box([toolbox2,toolbox1])
-        self.canvas = widgets.Box([fig_window1,fig_window2])
+        # self.canvas = widgets.Box([fig_window1,fig_window2])# need plt.ioff to supress output, not compatible with jupyterLite
         
-
-        
-        display(html_sty,self.ui,self.canvas)
+        display(html_sty,self.ui)
 
     def init_columns(self,silent=True):
         old_cols = [self.dd_x.value, self.dd_y.value, self.dd_z.value]
@@ -461,10 +459,10 @@ class Player:
 
 
     def init_figures(self):
-        plt.ioff()# Avoid output
+        # plt.ioff()# cause problem in jupyterlite
         fig = plt.figure(figsize=(5,3))# main plot
         fig_cut = plt.figure(figsize=(5,3))# linecuts
-        plt.ion()
+        # plt.ion()
         
         fig.canvas.mpl_connect('button_press_event', self.on_cut_pos_change)
         
