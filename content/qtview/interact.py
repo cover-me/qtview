@@ -26,7 +26,7 @@ class ProcessQueue:
         '''
         enabled = widgets.Checkbox(value=True,indent=False)
         enabled.layout = widgets.Layout(width='15px',margin='0px')
-        enabled.observe(self.parent.on_operations_change,'value')
+        enabled.observe(self.parent.on_data_change,'value')
         
         doc_string = func_and_args[0].__doc__.strip()
         selected = widgets.ToggleButton(value=False,description=name,tooltip=doc_string,layout=LAYOUT_BTN)
@@ -39,7 +39,7 @@ class ProcessQueue:
         for arg_name, arg_default in zip(func_and_args[1],func_and_args[2]):
             input_list.append(widgets.Label(value=arg_name,layout=LAYOUT_LABEL))
             _ = widgets.Text(value=str(arg_default),continuous_update=False,layout=LAYOUT_INPUT)
-            _.observe(self.parent.on_operations_change,'value')
+            _.observe(self.parent.on_data_change,'value')
             input_list.append(_)
 
         input_area = widgets.VBox(input_list)
@@ -48,7 +48,7 @@ class ProcessQueue:
         selected.value = True# select this item, trigger self.on_selection_change
         
         self.update_ui()
-        self.parent.on_operations_change()
+        self.parent.on_data_change()
         
     def update_ui(self):
         self.select_area.children = [i[0] for i in self.queue]
@@ -73,21 +73,21 @@ class ProcessQueue:
                 self.change_selected_silent(new_sel)
             
             self.update_ui()
-            self.parent.on_operations_change()
+            self.parent.on_data_change()
     
     def up(self,event=None):
         if self.index>0:
             self.queue[self.index],self.queue[self.index-1] = self.queue[self.index-1],self.queue[self.index]
             self.index -= 1
             self.update_ui()
-            self.parent.on_operations_change()
+            self.parent.on_data_change()
             
     def down(self,event=None):
         if self.index<len(self.queue)-1:
             self.queue[self.index],self.queue[self.index+1] = self.queue[self.index+1],self.queue[self.index]
             self.index += 1
             self.update_ui()
-            self.parent.on_operations_change()
+            self.parent.on_data_change()
             
     def clear(self,event=None):
         for i in self.queue:
@@ -98,7 +98,7 @@ class ProcessQueue:
         self.index = -1
         self.select_area.children = []
         self.input_area.children = []
-        self.parent.on_operations_change()
+        self.parent.on_data_change()
 
     def change_selected_silent(self,s):
         s.unobserve(self.on_selection_change,'value')
@@ -123,6 +123,9 @@ class ProcessQueue:
         return -1
 
 class Operations:
+    '''
+    An UI and methods for data operations (filters).
+    '''
     def __init__(self,main_ui):
         self.main_ui = main_ui
         self.functions = self.get_functions()# A dictionary of functions in operation module. {fun_name: (func_callable,arg_names,arg_defaults),...}
@@ -151,7 +154,7 @@ class Operations:
         self.ui = widgets.HBox([self.sel_funcs,buttons,self.pq.ui],layout={'width':'500px','border':'1px solid #ccc','padding':'2px 0px 0px 2px','margin':'0px 5px 2px 0px'})
 
         
-    def on_operations_change(self,change=None):
+    def on_data_change(self,change=None):
         # get the process function
         
         # Operation function change, cols change, or after loading data
@@ -224,6 +227,11 @@ class Operations:
     def on_add(self,event):
         name = self.sel_funcs.value
         self.pq.add(name,self.functions[name])    
+
+        
+        
+        
+        
         
 class Player:
     '''
@@ -233,25 +241,33 @@ class Player:
         if not mpl.get_backend() == 'module://ipympl.backend_nbagg':
             raise "Need ipympl backend."
             
+        self.counter = 0# should remove in the future
+ 
+        self.d = None# raw data, processed data, and methods for loading data
+        self.operations = Operations(self)# provide UI and methods for data processing
         
+        self.figures = None
         self.axes = None
-        self.d = None
         self.lines = None
-        self.init_figures()
         
-        self.create_export_folder()
-        self.operations = Operations(self)
-        self.create_ui()
+        self.init_ui()        
+        self.init_export_folder()
+
         self.on_path_change()
     
-    def create_export_folder(self):
-        self.exp_folder = 'qtview export'
-        if not os.path.exists(self.exp_folder):
-            os.makedirs(self.exp_folder)
+    def init_export_folder(self):
+        self.export_folder = 'qtview export'
+        if not os.path.exists(self.export_folder):
+            os.makedirs(self.export_folder)
 
-    
-    def create_ui(self):
-        
+    def init_ui(self):
+        '''
+        Initialize user interface.
+        toolbox1: operations
+        toolbox2: plot settings
+        fig_box1: main figure
+        fig_box2: linecuts
+        '''
         # to minimize width: layout={'width':'auto'}, to maximize width: layout={'width':'100%'}
         
         # HTML style
@@ -265,7 +281,10 @@ class Player:
         html_sty = widgets.HTML(html_sty)# applies even outside a box
         
         
-        # Toolbox1
+        # toolbox1
+        toolbox1 = self.operations.ui
+        
+        # toolbox2
         widget_lines = []
         
         ## Dropdowns
@@ -274,13 +293,13 @@ class Player:
         self.dd_file_path.observe(self.on_path_change,'value')
         
         self.dd_x = widgets.Dropdown(layout={'width':'24%'})
-        self.dd_x.observe(self.operations.on_operations_change,'value')
+        self.dd_x.observe(self.operations.on_data_change,'value')
         
         self.dd_y = widgets.Dropdown(layout={'width':'24%'})
-        self.dd_y.observe(self.operations.on_operations_change,'value')
+        self.dd_y.observe(self.operations.on_data_change,'value')
         
         self.dd_z = widgets.Dropdown(layout={'width':'24%'})
-        self.dd_z.observe(self.operations.on_operations_change,'value')
+        self.dd_z.observe(self.operations.on_data_change,'value')
         
         widget_lines.append(widgets.HBox([self.dd_file_path,self.dd_x,self.dd_y,self.dd_z]))        
         
@@ -323,33 +342,65 @@ class Player:
         ## information area
         self.html_info = widgets.HTML(value='Left-click on the image to show linecuts.',layout={'width':'auto'})
         widget_lines.append(self.html_info)
-        
 
-        # toolboxes
-        toolbox1 = self.operations.ui
         toolbox2 = widgets.VBox(widget_lines,layout=toolbox1.layout)
-        # fig_window1 = widgets.VBox([self.figs[0].canvas])# need plt.ioff to supress output, not compatible with jupyterLite
-        # fig_window2 = widgets.VBox([self.figs[1].canvas])# need plt.ioff to supress output, not compatible with jupyterLite
+        
+        # fig_boxes
+        self.init_figures()
+        fig_box1 = widgets.VBox([self.figures[0].canvas])
+        fig_box2 = widgets.VBox([self.figures[1].canvas])
      
 
         ## Top layer ui
-        self.ui = widgets.Box([toolbox2,toolbox1])
-        # self.canvas = widgets.Box([fig_window1,fig_window2])# need plt.ioff to supress output, not compatible with jupyterLite
+        self.toolboxes = widgets.Box([toolbox2,toolbox1])
+        self.fig_boxes = widgets.Box([fig_box1,fig_box2])
         
-        display(html_sty,self.ui)
+        display(html_sty,self.toolboxes,self.fig_boxes)
+        
+    def init_figures(self):
+        plt.ioff()
+        fig = plt.figure(figsize=(3.5,2))# main plot
+        fig_cut = plt.figure(figsize=(3.5,2))# linecuts
+        # plt.ion()# problem in jupyterlite
+        
+        fig.canvas.mpl_connect('button_press_event', self.on_cut_pos_change)
+        
+        self.figures = [fig,fig_cut]
+        for i in self.figures:
+            i.canvas.header_visible = False
+            # i.canvas.toolbar_visible = True
+            i.canvas.toolbar_position = 'left'
+            i.canvas.resizable = True
+
+    def on_path_change(self,change=None):
+        fpath = self.dd_file_path.value
+        if os.path.isfile(fpath):
+            self.clear_linecuts()
+            if self.d is None:
+                self.d = data.Data2d(fpath)
+            else:
+                self.d.load_data(fpath)
+
+            self.init_columns()
+            self.operations.on_data_change()# this includes redraw()
+            
+    def clear_linecuts(self):
+        if self.lines:
+            for i in self.lines:
+                i.set_data([],[])
 
     def init_columns(self,silent=True):
         old_cols = [self.dd_x.value, self.dd_y.value, self.dd_z.value]
         raw_labels = self.d.raw_labels
-        options_rl = list(zip(raw_labels,range(len(raw_labels))))
+        options = list(zip(raw_labels,range(len(raw_labels))))
         if silent:
-            self.dd_x.unobserve(self.operations.on_operations_change,'value')
-            self.dd_y.unobserve(self.operations.on_operations_change,'value')
-            self.dd_z.unobserve(self.operations.on_operations_change,'value')
+            self.dd_x.unobserve(self.operations.on_data_change,'value')
+            self.dd_y.unobserve(self.operations.on_data_change,'value')
+            self.dd_z.unobserve(self.operations.on_data_change,'value')
             
-        self.dd_x.options = options_rl
-        self.dd_y.options = options_rl
-        self.dd_z.options = options_rl
+        self.dd_x.options = options
+        self.dd_y.options = options
+        self.dd_z.options = options
         
         new_cols = [self.dd_x.value, self.dd_y.value, self.dd_z.value]
         if any([i!=j for i,j in zip(old_cols,new_cols)]):
@@ -359,30 +410,19 @@ class Player:
             self.dd_z.value = cols[2]
         
         if silent:
-            self.dd_x.observe(self.operations.on_operations_change,'value')
-            self.dd_y.observe(self.operations.on_operations_change,'value')
-            self.dd_z.observe(self.operations.on_operations_change,'value')
+            self.dd_x.observe(self.operations.on_data_change,'value')
+            self.dd_y.observe(self.operations.on_data_change,'value')
+            self.dd_z.observe(self.operations.on_data_change,'value')
         
         
     def on_swp_xy(self,event=None):
         if not (self.dd_x.value is None or self.dd_y.value is None):
-            self.dd_x.unobserve(self.operations.on_operations_change,'value')
+            self.dd_x.unobserve(self.operations.on_data_change,'value')
             vx = self.dd_x.value
             self.dd_x.value = self.dd_y.value
-            self.dd_x.observe(self.operations.on_operations_change,'value')
+            self.dd_x.observe(self.operations.on_data_change,'value')
             self.dd_y.value = vx# this will trigger a change event
-            
-    def on_path_change(self,change=None):
-        fpath = self.dd_file_path.value
-        if fpath:
-            self.clear_linecuts()
-            if self.d is None:
-                self.d = data.Data2d(fpath)
-            else:
-                self.d.load_data(fpath)
 
-            self.init_columns()
-            self.operations.on_operations_change()# this includes redraw()
         
     def update_file_list(self):
         f_list = [i for i in os.listdir() if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
@@ -392,13 +432,6 @@ class Player:
         if not change['new']:
             self.html_info.value = ''
             self.clear_linecuts()
-
-                
-    def clear_linecuts(self):
-        if self.lines:
-            for i in self.lines:
-                i.set_data([],[])       
-            
         
     def on_cut_pos_change(self,click_event):
         if self.c_show_cuts.value and self.d is not None:
@@ -426,13 +459,16 @@ class Player:
                 self.lines = ax.plot(hx,hy,'tab:blue',vx,vy,'tab:orange')
                 self.lines += axh.plot(hx,hz,'tab:blue')  
                 self.lines += axv.plot(vz,vy,'tab:orange')
+                
+            self.figures[0].canvas.draw()
+            self.figures[1].canvas.draw()
 
         
     def reset_cmap(self,event=None,silent=False):
         if silent:
             self.slider_gamma.unobserve(self.on_gamma_change,'value')
             self.slider_vlim.unobserve(self.on_vlim_change,'value')
-        self.slider_gamma.val = 0
+        self.slider_gamma.value = 0
         self.slider_vlim.value = (self.slider_vlim.min,self.slider_vlim.max)
         if silent:
             self.slider_gamma.observe(self.on_gamma_change,'value')
@@ -443,39 +479,20 @@ class Player:
         zmin,zmax = np.min(z),np.max(z)
         dz = (zmax-zmin)/100
         self.slider_vlim.unobserve(self.on_vlim_change,'value')
-        if zmin>self.slider_vlim.max:
+        if zmin>self.slider_vlim.max:# can not set zmin > max, can "="
             self.slider_vlim.max = zmax
             self.slider_vlim.min = zmin
         else:
             self.slider_vlim.min = zmin
             self.slider_vlim.max = zmax
         self.slider_vlim.step = dz
-        if reset_value:
-            self.slider_vlim.lower = zmin
-            self.slider_vlim.upper = zmax
+        if reset_value or self.slider_vlim.lower == self.slider_vlim.upper:
+            self.slider_vlim.value = (zmin,zmax)
         self.slider_vlim.observe(self.on_vlim_change,'value')
-
-
-    def init_figures(self):
-        # plt.ioff()# cause problem in jupyterlite
-        fig = plt.figure(figsize=(3.5,2))# main plot
-        fig_cut = plt.figure(figsize=(3.5,2))# linecuts
-        # plt.ion()
-        
-        fig.canvas.mpl_connect('button_press_event', self.on_cut_pos_change)
-        
-        self.figs = [fig,fig_cut]
-        for i in self.figs:
-            i.canvas.header_visible = False
-            # i.canvas.toolbar_visible = True
-            i.canvas.toolbar_position = 'left'
-            i.canvas.resizable = True
-            
-    
     
     def redraw(self,event=None):
 
-        fig,fig_cut = self.figs
+        fig,fig_cut = self.figures
         fig.clear()
         fig_cut.clear()# is more convenient because l1 and l2 has been cleared
         self.lines = None
@@ -508,6 +525,12 @@ class Player:
             # prepare for linecuts
             axv.set_ylim(ax.get_ylim())
             axh.set_xlim(ax.get_xlim())
+            
+        if self.counter == 0:# somehow if we canvas.draw() at the first time the figure would disappear.
+            self.counter = 1
+        else:
+            self.figures[0].canvas.draw()
+            self.figures[1].canvas.draw()
 
         
     def on_gamma_change(self,change):
@@ -520,16 +543,19 @@ class Player:
             self.im.set_cmap(plot._get_cmap_gamma(cmpname,g,1024))
         else:
             self.im.set_cmap(cmpname)
+        self.figures[0].canvas.draw()
 
     def on_cmap_change(self,change):
         cmap = change['new']
         if cmap in plt.colormaps():
             self.im.set_cmap(cmap)
+        self.figures[0].canvas.draw()
     
     def on_vlim_change(self,change):
         v0,v1 = change['new']
         self.im.set_clim(v0,v1)
-        
+        self.figures[0].canvas.draw()
+
     def save_data(self,event=None):
         if self.dd_data_source.value == 'figure':
             self.save_data_figure()
@@ -545,7 +571,7 @@ class Player:
 
         fname = self.d.filename
         fname = os.path.splitext(fname)[0]
-        fname = '%s/%s.2d.%s'%(self.exp_folder,fname,d_type)
+        fname = '%s/%s.2d.%s'%(self.export_folder,fname,d_type)
         
         self.d.save_data(fname,self.d.data,self.d.labels)
         
@@ -561,11 +587,11 @@ class Player:
         
         
         # vlincut
-        fnamev = '%s/%s.vcut.%s'%(self.exp_folder,fname,d_type)
+        fnamev = '%s/%s.vcut.%s'%(self.export_folder,fname,d_type)
         self.d.save_data(fnamev,self.d_vcut[:,np.newaxis,:],self.d.labels)# save_data only takes 2d data
 
         # hlincut
-        fnameh = '%s/%s.hcut.%s'%(self.exp_folder,fname,d_type)
+        fnameh = '%s/%s.hcut.%s'%(self.export_folder,fname,d_type)
         self.d.save_data(fnameh,self.d_hcut[:,np.newaxis,:],self.d.labels)
 
         self.html_info.value = 'Files saved: %s<br>%s'%(fnamev,fnameh)
@@ -577,7 +603,7 @@ class Player:
         
         fname = self.d.filename
         fname = os.path.splitext(fname)[0]
-        fname = '%s/%s.raw.%s'%(self.exp_folder,fname,d_type)
+        fname = '%s/%s.raw.%s'%(self.export_folder,fname,d_type)
         
         self.d.save_data(fname,self.d.raw_data,self.d.raw_labels)
         
