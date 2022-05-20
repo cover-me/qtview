@@ -460,8 +460,8 @@ class Player:
 
     def init_figures(self):
         # plt.ioff()# cause problem in jupyterlite
-        fig = plt.figure(figsize=(5,3))# main plot
-        fig_cut = plt.figure(figsize=(5,3))# linecuts
+        fig = plt.figure(figsize=(3.5,2))# main plot
+        fig_cut = plt.figure(figsize=(3.5,2))# linecuts
         # plt.ion()
         
         fig.canvas.mpl_connect('button_press_event', self.on_cut_pos_change)
@@ -469,7 +469,7 @@ class Player:
         self.figs = [fig,fig_cut]
         for i in self.figs:
             i.canvas.header_visible = False
-            i.canvas.toolbar_visible = True
+#             i.canvas.toolbar_visible = True
             i.canvas.toolbar_position = 'left'
             i.canvas.resizable = True
             
@@ -500,6 +500,7 @@ class Player:
                 i.set_data([],[])
 
         if self.d:
+            ax, axh, axv = self.axes
             gm = self.slider_gamma.value
             v0,v1 = self.slider_vlim.value
             cmap = self.dd_cmap.value
