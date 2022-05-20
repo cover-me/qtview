@@ -148,7 +148,7 @@ class Operations:
         
         # Function list for selecting
         self.sel_funcs = widgets.Select(options=self.functions.keys(),description='')
-        self.sel_funcs.layout = widgets.Layout(height='160px',width='100px')
+        self.sel_funcs.layout = widgets.Layout(height='120px',width='100px')
         
         # Add, remove, move, clear and the Queue
         self.pq = ProcessQueue(parent=self)
@@ -167,7 +167,7 @@ class Operations:
         buttons = widgets.VBox([self.btn_add,self.btn_up,self.btn_down,self.btn_remove,self.btn_clear])
 
         # Top UI
-        self.ui = widgets.HBox([self.sel_funcs,buttons,self.pq.ui],layout={'width':'500px','border':'1px solid #ccc','padding':'2px 0px 0px 2px','margin':'0px 5px 2px 0px'})
+        self.ui = widgets.HBox([self.sel_funcs,buttons,self.pq.ui],layout={'width':'450px','border':'1px solid #ccc','padding':'2px 0px 0px 2px','margin':'0px 5px 2px 0px'})
 
         
     def on_data_change(self,change=None):
@@ -287,11 +287,14 @@ class Player:
         # to minimize width: layout={'width':'auto'}, to maximize width: layout={'width':'100%'}
         
         # HTML style
-        html_sty = '''<style> .widget-box {flex-wrap:wrap}
+        html_sty = '''<style>
+.widget-box {flex-wrap:wrap}
 .widget-vbox .widget-label {width:auto;}
 .widget-box .widget-hbox {flex-wrap:nowrap}
 .widget-inline-hbox .widget-readout {min-width:30px}
-.widget-dropdown > select {flex:1}</style>
+.widget-dropdown > select {flex:1}
+:root {--jp-widgets-font-size:10pt; --jp-widgets-inline-height:20px;--jp-widgets-input-padding:2px;--jp-widgets-inline-margin:2px;}
+</style>
 '''
         
         html_sty = widgets.HTML(html_sty)# applies even outside a box
@@ -301,62 +304,59 @@ class Player:
         toolbox1 = self.operations.ui
         
         # toolbox2
-        widget_lines = []
         
         ## Dropdowns
-        self.dd_file_path = widgets.Dropdown(description='',layout={'width':'24%'})# tooltip does not work at this moment
+        self.dd_file_path = widgets.Dropdown(description='',layout={'width':'100px'})# tooltip does not work at this moment
         self.update_file_list()
         self.dd_file_path.observe(self.on_path_change,'value')
         
-        self.dd_x = widgets.Dropdown(layout={'width':'24%'})
+        self.dd_x = widgets.Dropdown(layout={'width':'110px'})
         self.dd_x.observe(self.operations.on_data_change,'value')
         
-        self.dd_y = widgets.Dropdown(layout={'width':'24%'})
+        self.dd_y = widgets.Dropdown(layout={'width':'110px'})
         self.dd_y.observe(self.operations.on_data_change,'value')
         
-        self.dd_z = widgets.Dropdown(layout={'width':'24%'})
+        self.dd_z = widgets.Dropdown(layout={'width':'110px'})
         self.dd_z.observe(self.operations.on_data_change,'value')
         
-        widget_lines.append(widgets.HBox([self.dd_file_path,self.dd_x,self.dd_y,self.dd_z]))        
-        
         ## Sliders
-        self.slider_gamma = widgets.IntSlider(value=0,min=-100,max=100,step=1,description='gamma',layout={'width':'40%'})
+        self.slider_gamma = widgets.IntSlider(value=0,min=-100,max=100,step=1,description='gamma',layout={'width':'150px'})
         self.slider_gamma.observe(self.on_gamma_change,'value')
         
-        self.slider_vlim = widgets.FloatRangeSlider(value=[0,1], min=0, max=1, step=0.01, description='vlim',readout_format='.2e',layout={'width':'56%'})
+        self.slider_vlim = widgets.FloatRangeSlider(value=[0,1], min=0, max=1, step=0.01, description='clim',readout_format='.2e',layout={'width':'280px'})
         self.slider_vlim.observe(self.on_vlim_change,'value')
         
-        widget_lines.append(widgets.HBox([self.slider_gamma,self.slider_vlim]))
-
         ## Buttons and checks
-        self.btn_swp_xy = widgets.Button(description='Swap XY',layout={'width':'100px'})
+        self.btn_swp_xy = widgets.Button(description='Swap XY',layout={'width':'80px'})
         self.btn_swp_xy.on_click(self.on_swp_xy)
         
-        self.b_reset = widgets.Button(description='Reset Color',layout={'width':'100px'})
+        self.b_reset = widgets.Button(description='Reset C',layout={'width':'70px'})
         self.b_reset.on_click(self.reset_cmap)
         
-        self.b_save_data = widgets.Button(description='Save data',layout={'width':'100px'})
+        self.b_save_data = widgets.Button(description='Save data',layout={'width':'82px'})
         self.b_save_data.on_click(self.save_data)
         
-        self.c_auto_reset = widgets.Checkbox(value=True,description='Auto color',indent=False,layout={'width':'auto'})
+        self.c_auto_reset = widgets.Checkbox(value=True,description='Auto C',indent=False,layout={'width':'auto'})
         self.c_show_cuts = widgets.Checkbox(value=True,description='Linecuts',indent=False,layout={'width':'auto'})
         self.c_show_cuts.observe(self.on_show_cuts_change,'value')
 
-        widget_lines.append(widgets.HBox([self.btn_swp_xy,self.b_reset,self.b_save_data,self.c_auto_reset,self.c_show_cuts])) 
 
         ## Dropdowns2
-        self.dd_cmap = widgets.Dropdown(value='seismic', options=plt.colormaps(), description='cmap:', indent=False, disabled=False, layout={'width':'115px'})
+        self.dd_cmap = widgets.Dropdown(value='seismic', options=plt.colormaps(), description='cmap:', indent=False, disabled=False, layout={'width':'130px'})
         self.dd_cmap.observe(self.on_cmap_change,'value')
         
-        self.dd_data_type = widgets.Dropdown(value='dat', options=['dat','npz','mtx'], description='Save as',disabled=False,layout={'width':'100px'})
+        self.dd_data_type = widgets.Dropdown(value='dat', options=['dat','npz','mtx'], description='Save as',disabled=False,layout={'width':'95px'})
         self.dd_data_source = widgets.Dropdown(value='figure', options=['figure','linecuts','raw'], description='Save from',disabled=False,layout={'width':'125px'})
-        self.dd_plot_method = widgets.Dropdown(options=['imshow (default)','pcolormesh: if XY non-uniformly spaced'], description='Method',disabled=False,layout={'width':'125px'})
-
-        widget_lines.append(widgets.HBox([self.dd_cmap,self.dd_data_type,self.dd_data_source,self.dd_plot_method]))
-
+        self.dd_plot_method = widgets.Dropdown(options=['imshow (default)','pcolormesh: if XY non-uniformly spaced'], description='Plot by',disabled=False,layout={'width':'125px'})
 
         ## information area
         self.html_info = widgets.HTML(value='Left-click on the image to show linecuts.',layout={'width':'auto'})
+        
+        widget_lines = []
+        widget_lines.append(widgets.HBox([self.dd_file_path,self.dd_x,self.dd_y,self.dd_z]))
+        widget_lines.append(widgets.HBox([self.slider_gamma,self.slider_vlim]))
+        widget_lines.append(widgets.HBox([self.dd_cmap,self.b_reset,self.btn_swp_xy,self.c_auto_reset,self.c_show_cuts])) 
+        widget_lines.append(widgets.HBox([self.dd_data_type,self.dd_data_source,self.b_save_data,self.dd_plot_method]))
         widget_lines.append(self.html_info)
 
         toolbox2 = widgets.VBox(widget_lines,layout=toolbox1.layout)
@@ -448,6 +448,9 @@ class Player:
         if not change['new']:
             self.html_info.value = ''
             self.clear_linecuts()
+            self.figures[0].canvas.draw()
+            self.figures[1].canvas.draw()
+            
         
     def on_cut_pos_change(self,click_event):
         if self.c_show_cuts.value and self.d is not None:
