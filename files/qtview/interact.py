@@ -538,6 +538,7 @@ class Player:
         axh.set_ylabel(self.d.labels[2],color=ch)
 
         axv = fig_cut.add_axes(axh.get_position())# ax vertical linecut
+        axv.patch.set_visible(False)# otherwise axh is blocked
         axv.xaxis.tick_top()
         axv.xaxis.set_label_position("top")
         axv.spines['top'].set_color(cv)
