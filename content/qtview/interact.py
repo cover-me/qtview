@@ -274,7 +274,7 @@ class Player:
         self.on_path_change()
     
     def init_export_folder(self):
-        self.export_folder = 'qtview export'
+        self.export_folder = 'qtview exported data'
         if not os.path.exists(self.export_folder):
             os.makedirs(self.export_folder)
 
@@ -409,7 +409,6 @@ class Player:
                 i.set_data([],[])
 
     def init_columns(self,silent=True):
-        old_cols = [self.dd_x.value, self.dd_y.value, self.dd_z.value]
         raw_labels = self.d.raw_labels
         options = list(zip(raw_labels,range(len(raw_labels))))
         if silent:
@@ -420,9 +419,8 @@ class Player:
         self.dd_x.options = options
         self.dd_y.options = options
         self.dd_z.options = options
-        
-        new_cols = [self.dd_x.value, self.dd_y.value, self.dd_z.value]
-        if any([i!=j for i,j in zip(old_cols,new_cols)]):
+
+        if self.dd_x.index == self.dd_y.index:
             # default columns
             if len(raw_labels)>3:
                 # raw data or mtx
@@ -503,7 +501,7 @@ class Player:
     
     def updata_vlim_bound_silently(self,reset_value=False):
         z = self.d.data[2]
-        zmin,zmax = np.min(z),np.max(z)
+        zmin,zmax = np.nanmin(z),np.nanmax(z)
         dz = (zmax-zmin)/100
         self.slider_vlim.unobserve(self.on_vlim_change,'value')
         if zmin>self.slider_vlim.max:# can not set zmin > max, can "="
