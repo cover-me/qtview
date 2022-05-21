@@ -409,6 +409,7 @@ class Player:
                 i.set_data([],[])
 
     def init_columns(self,silent=True):
+        old_cols = [self.dd_x.index,self.dd_y.index,self.dd_z.index]
         raw_labels = self.d.raw_labels
         options = list(zip(raw_labels,range(len(raw_labels))))
         if silent:
@@ -420,16 +421,20 @@ class Player:
         self.dd_y.options = options
         self.dd_z.options = options
 
-        if self.dd_x.index == self.dd_y.index:
+        if any([i is None for i in old_cols]):
             # default columns
             if len(raw_labels)>3:
                 # raw data or mtx
                 cols = [1,0,3] if self.d.filename.endswith('.dat') else [0,1,3]
             else:
                 cols = [0,1,2]
-            self.dd_x.value = cols[0]
-            self.dd_y.value = cols[1]
-            self.dd_z.value = cols[2]
+        else:
+            index_max = len(options)-1
+            cols = [min(i,index_max) for i in old_cols]
+            
+        self.dd_x.value = cols[0]
+        self.dd_y.value = cols[1]
+        self.dd_z.value = cols[2]
         
         if silent:
             self.dd_x.observe(self.operations.on_data_change,'value')
@@ -472,11 +477,12 @@ class Player:
                 l1v.set_data(vx,vy)
                 l2h.set_data(hx,hz)
                 l2v.set_data(vz,vy)
-                z1,z2 = hz.min(),hz.max()
+
+                z1,z2 = np.nanmin(hz),np.nanmax(hz)
                 dz = (z2-z1)/20
                 axh.set_ylim(z1-dz,z2+dz)
                 
-                z1,z2 = vz.min(),vz.max()
+                z1,z2 = np.nanmin(vz),np.nanmax(vz)
                 dz = (z2-z1)/20                
                 axv.set_xlim(z1-dz,z2+dz)
             else:
@@ -518,8 +524,8 @@ class Player:
     def create_linecut_axes(self,fig_cut):
         ch = 'tab:blue'
         cv = 'tab:orange'
-        axh = fig_cut.add_axes([0.28,0.13,0.54,0.72])
         
+        axh = fig_cut.add_axes([0.28,0.13,0.54,0.72])
         axh.yaxis.tick_right()
         axh.yaxis.set_label_position("right")
         axh.spines['bottom'].set_color(ch)
