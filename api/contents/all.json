@@ -2,9 +2,9 @@
   "content": [
     {
       "content": null,
-      "created": "2022-05-21T04:32:17.670636Z",
+      "created": "2022-05-21T21:08:15.295656Z",
       "format": null,
-      "last_modified": "2022-05-21T04:31:10.538282Z",
+      "last_modified": "2022-05-21T21:07:12.712953Z",
       "mimetype": null,
       "name": "test.dat",
       "path": "test.dat",
@@ -14,9 +14,9 @@
     },
     {
       "content": null,
-      "created": "2022-05-21T04:32:17.666636Z",
+      "created": "2022-05-21T21:08:15.291656Z",
       "format": null,
-      "last_modified": "2022-05-21T04:31:10.534282Z",
+      "last_modified": "2022-05-21T21:07:12.708953Z",
       "mimetype": null,
       "name": "Static figure example.ipynb",
       "path": "Static figure example.ipynb",
@@ -26,9 +26,9 @@
     },
     {
       "content": null,
-      "created": "2022-05-21T04:32:17.666636Z",
+      "created": "2022-05-21T21:08:15.291656Z",
       "format": null,
-      "last_modified": "2022-05-21T04:31:10.534282Z",
+      "last_modified": "2022-05-21T21:07:12.708953Z",
       "mimetype": null,
       "name": "Example Zenodo files.ipynb",
       "path": "Example Zenodo files.ipynb",
@@ -38,9 +38,9 @@
     },
     {
       "content": null,
-      "created": "2022-05-21T04:32:17.666636Z",
+      "created": "2022-05-21T21:08:15.291656Z",
       "format": null,
-      "last_modified": "2022-05-21T04:31:10.534282Z",
+      "last_modified": "2022-05-21T21:07:12.708953Z",
       "mimetype": null,
       "name": "Interactive plot demo.ipynb",
       "path": "Interactive plot demo.ipynb",
@@ -50,9 +50,9 @@
     },
     {
       "content": null,
-      "created": "2022-05-21T04:32:17.666636Z",
+      "created": "2022-05-21T21:08:15.295656Z",
       "format": null,
-      "last_modified": "2022-05-21T04:32:17.666636Z",
+      "last_modified": "2022-05-21T21:08:15.295656Z",
       "mimetype": null,
       "name": "qtview",
       "path": "qtview",
@@ -62,9 +62,9 @@
     },
     {
       "content": null,
-      "created": "2022-05-21T04:32:17.666636Z",
+      "created": "2022-05-21T21:08:15.291656Z",
       "format": null,
-      "last_modified": "2022-05-21T04:32:16.414620Z",
+      "last_modified": "2022-05-21T21:08:13.979668Z",
       "mimetype": "text/markdown",
       "name": "README.md",
       "path": "README.md",
@@ -73,9 +73,9 @@
       "writable": true
     }
   ],
-  "created": "2022-05-21T04:32:17.670636Z",
+  "created": "2022-05-21T21:08:15.295656Z",
   "format": "json",
-  "last_modified": "2022-05-21T04:32:17.670636Z",
+  "last_modified": "2022-05-21T21:08:15.295656Z",
   "mimetype": null,
   "name": "",
   "path": "",
