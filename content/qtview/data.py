@@ -64,6 +64,10 @@ class Data2d:
         self.process_data(**kw)
             
     def process_data(self,cook=None,cols=None,**kw):
+        '''
+        Apply cook (processing function) and cols (columns) to self.raw_data and self.raw_labels
+        new data is updated to self.data and self.labels
+        '''
         if cols is None:
             cols = [1,0,3] if len(self.raw_data)>3 else [0,1,2]
         self.columns = cols
@@ -104,24 +108,31 @@ class Data2d:
             row, col = d0.shape
             
             if len(labels) != col:
-                raise('Number of labels does not match the data.')
+                raise Exception('Number of labels does not match the data.')
                 
             if len(sizes)==1:
                 sizes = [sizes[0],1]
             elif len(sizes)==2:
                 pass
-            elif len(sizes)==3 and sizes[2]==1:
+            elif np.prod(sizes[3:])==1:
                 sizes = sizes[:2]
             else:
-                raise('Scan dimension not supported.')
+                raise Exception('Scan dimension not supported.')
 
             nx = sizes[0]
             ny = int(np.ceil(float(row)/nx))# ny maybe smaller than sizes[1] if scan is interrupted by a user
 
+            # d0 is a tabular (2d), we want to convert it to an array of matrixes [X,Y,Z,...] (3d)
             d1 = np.full((nx*ny,col), np.nan)# initialize with na.nan
             d1[:row] = d0
             d1 = d1.T
             d1 = d1.reshape([col,ny,nx])
+            
+            # If scan interrupts in advance, there may be NaN in X,Y,Z,...
+            # We calculate values where there is NaN for X and Y.
+            if np.shape(d1)[1]>2:
+                nans = np.isnan(d1[0,-1,:])
+                d1[:2,-1,nans] = d1[:2,-2,nans]*2.-d1[:2,-3,nans]
 
             self.raw_data = d1
             self.raw_labels = labels
@@ -143,7 +154,7 @@ class Data2d:
         with open2(fpath, 'rb') as f:
             line1 = f.readline().decode().rstrip('\n\t\r')
             if not line1.startswith('Units'):
-                raise('Not an MTX file!') 
+                raise Exception('Not an MTX file!') 
             else:
                 # xname,yname,zname,dataset name
                 _ = line1.split(',') 
@@ -153,7 +164,7 @@ class Data2d:
                 line2 = f.readline().decode()
                 nx,ny,nz,len_in_byte = [int(x) for x in line2.split(' ')]
                 if nz != 1:
-                    raise('3d data not supported!')
+                    raise Exception('3d data not supported!')
                 else:
                     x = np.linspace(float(_[3]),float(_[4]),nx)
                     y = np.linspace(float(_[6]),float(_[7]),ny)
@@ -267,7 +278,7 @@ class Data2d:
         MTX is not good, XY information lost, should avoid using it.
         """
         if not len(data)==3:
-            raise "Data size not right."
+            raise Exception("Data size not right.")
         
         X,Y,Z = data
         
