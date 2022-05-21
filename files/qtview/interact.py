@@ -24,6 +24,8 @@ plt.rcParams.update({
     # Ticks
     'xtick.minor.visible': False,
     'ytick.minor.visible': False,
+    
+    'figure.dpi':100,
 })
 
 class ProcessQueue:
@@ -375,8 +377,9 @@ class Player:
         
     def init_figures(self):
         plt.ioff()
-        fig = plt.figure(figsize=(3,2.5))# main plot
-        fig_cut = plt.figure(figsize=(3,2.5))# linecuts
+        a = 1
+        fig = plt.figure(figsize=(4*a,3*a))#,facecolor='green')# main plot
+        fig_cut = plt.figure(figsize=(4*a,3*a))# linecuts
         plt.ion()
         
         fig.canvas.mpl_connect('button_press_event', self.on_cut_pos_change)
@@ -389,16 +392,16 @@ class Player:
             i.canvas.resizable = True
 
     def on_path_change(self,change=None):
+        # fpath can be path, path inside zip, or url (url fetch is limited in JupyterLite, based on js, need to add "await" and run in independent cells)
         fpath = self.dd_file_path.value
-        if os.path.isfile(fpath):
-            self.clear_linecuts()
-            if self.d is None:
-                self.d = data.Data2d(fpath)
-            else:
-                self.d.load_data(fpath)
+        self.clear_linecuts()
+        if self.d is None:
+            self.d = data.Data2d(fpath)
+        else:
+            self.d.load_data(fpath)
 
-            self.init_columns()
-            self.operations.on_data_change()# this includes redraw()
+        self.init_columns()
+        self.operations.on_data_change()# this includes redraw()
             
     def clear_linecuts(self):
         if self.lines:
@@ -420,7 +423,12 @@ class Player:
         
         new_cols = [self.dd_x.value, self.dd_y.value, self.dd_z.value]
         if any([i!=j for i,j in zip(old_cols,new_cols)]):
-            cols = [1,0,3] if len(raw_labels)>3 else [0,1,2]
+            # default columns
+            if len(raw_labels)>3:
+                # raw data or mtx
+                cols = [1,0,3] if self.d.filename.endswith('.dat') else [0,1,3]
+            else:
+                cols = [0,1,2]
             self.dd_x.value = cols[0]
             self.dd_y.value = cols[1]
             self.dd_z.value = cols[2]
@@ -508,6 +516,37 @@ class Player:
         if reset_value or self.slider_vlim.lower == self.slider_vlim.upper:
             self.slider_vlim.value = (zmin,zmax)
         self.slider_vlim.observe(self.on_vlim_change,'value')
+        
+    def create_linecut_axes(self,fig_cut):
+        ch = 'tab:blue'
+        cv = 'tab:orange'
+        axh = fig_cut.add_axes([0.28,0.13,0.54,0.72])
+        
+        axh.yaxis.tick_right()
+        axh.yaxis.set_label_position("right")
+        axh.spines['bottom'].set_color(ch)
+        axh.spines['top'].set_visible(False)
+        axh.spines['left'].set_visible(False)
+        axh.spines['right'].set_color(ch)
+        axh.tick_params(axis='x', colors=ch)
+        axh.tick_params(axis='y', colors=ch)
+        axh.set_xlabel(self.d.labels[0],color=ch)
+        axh.set_ylabel(self.d.labels[2],color=ch)
+
+        axv = fig_cut.add_axes(axh.get_position())# ax vertical linecut
+        axv.xaxis.tick_top()
+        axv.xaxis.set_label_position("top")
+        axv.spines['top'].set_color(cv)
+        axv.spines['bottom'].set_visible(False)
+        axv.spines['right'].set_visible(False)
+        axv.spines['left'].set_color(cv)
+        axv.tick_params(axis='x', colors=cv)
+        axv.tick_params(axis='y', colors=cv)
+        axv.set_xlabel(self.d.labels[2],color=cv)
+        axv.set_ylabel(self.d.labels[1],color=cv)
+        
+        return axh,axv
+        
     
     def redraw(self,event=None):
 
@@ -516,21 +555,12 @@ class Player:
         fig_cut.clear()# is more convenient because l1 and l2 has been cleared
         self.lines = None
 
-        ax = fig.add_axes([0.25,0.15,0.55,0.66])
-        ax_cbar = fig.add_axes([0.82,0.15,0.03,0.66])
+        ax = fig.add_axes([0.28,0.13,0.54,0.72])
+        ax_cbar = fig.add_axes([0.84,0.13,0.03,0.72])
         ax.set_title(self.d.filename)
-
-        axh = fig_cut.add_axes([0.25,0.15,0.55,0.66])
-        axh.yaxis.tick_right()
-        axh.tick_params(axis='x', colors='tab:blue')
-        axh.tick_params(axis='y', colors='tab:blue')
-
-        axv = fig_cut.add_axes(axh.get_position(), frameon=False)# ax vertical linecut
-        axv.xaxis.tick_top()
-        axv.tick_params(axis='x', colors='tab:orange')
-        axv.tick_params(axis='y', colors='tab:orange')
-
-        self.axes = [ax, axh, axv]
+        axh, axv = self.create_linecut_axes(fig_cut)
+        
+        self.axes = [ax,axh,axv]
 
         if self.d:
             gm = self.slider_gamma.value
