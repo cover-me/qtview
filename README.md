@@ -6,13 +6,10 @@ JupyterLite:
 
 [![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://cover-me.github.io/qtview/lab?path=Interactive%20plot%20demo.ipynb)
 
-Binder (Takes some time to load):
+Binder (May take minutes to load):
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cover-me/qtview/main?labpath=content%2FInteractive%20plot%20demo.ipynb)
 
-Notebook only (for narrow screens):
-
-[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://cover-me.github.io/qtview/retro/notebooks/?path=Interactive%20plot%20demo.ipynb)
 
 # miscellaneous:
 
