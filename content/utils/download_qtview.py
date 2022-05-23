@@ -8,7 +8,7 @@ async def download_qtview():
     
     url_base = 'https://raw.githubusercontent.com/cover-me/qtview/main/content/'
     file_list = ['qtview/__init__.py','qtview/data.py','qtview/interact.py',
-                 'qtview/operation.py','qtview/plot.py','qtview/jupyterlitetools.py',
+                 'qtview/operation.py','qtview/plot.py',
                  'utils/jupyterlitetools.py','utils/download_qtview.py',
                  'test.dat']
 
