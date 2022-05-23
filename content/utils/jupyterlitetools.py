@@ -164,4 +164,18 @@ def ensure_folder_exists(path):
     fold_path = os.path.split(path)[0]
     if fold_path and not os.path.exists(fold_path):
         os.makedirs(fold_path)
+        
+        
+def zenodo_downloader(record_id, file_name, overwrite=True):
+    url = f'https://zenodo.org/api/records/{record_id}'
+    resp = await pyfetch(url)
+    record_meta = await resp.json()
+    for i in record_meta['files']:
+        if i['key'] == file_name:
+            file_dict = i
+            break
+    url = file_dict['links']['self']
+    print(f'Size: {file_dict["size"]/1e6} MB, downloading...')
+    await jupyterlitetools.url_to_mem(url,file_name,overwrite=True)
+    print('Done!')
 
