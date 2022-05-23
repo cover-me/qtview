@@ -166,7 +166,7 @@ def ensure_folder_exists(path):
         os.makedirs(fold_path)
         
         
-def zenodo_downloader(record_id, file_name, overwrite=True):
+async def zenodo_downloader(record_id, file_name, overwrite=True):
     url = f'https://zenodo.org/api/records/{record_id}'
     resp = await pyfetch(url)
     record_meta = await resp.json()
