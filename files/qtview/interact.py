@@ -255,7 +255,7 @@ class Player:
     '''
     Plot data interactively
     '''
-    def __init__(self):
+    def __init__(self,**kw):
         if not mpl.get_backend() == 'module://ipympl.backend_nbagg':
             raise "Need ipympl backend."
             
@@ -268,7 +268,7 @@ class Player:
         self.axes = None
         self.lines = None
         
-        self.init_ui()        
+        self.init_ui(**kw)        
         self.init_export_folder()
 
         self.on_path_change()
@@ -278,7 +278,7 @@ class Player:
         if not os.path.exists(self.export_folder):
             os.makedirs(self.export_folder)
 
-    def init_ui(self):
+    def init_ui(self,**kw):
         '''
         Initialize user interface.
         toolbox1: operations
@@ -309,7 +309,7 @@ class Player:
         
         ## Dropdowns
         self.dd_file_path = widgets.Dropdown(description='',layout={'width':'100px'})# tooltip does not work at this moment
-        self.update_file_list()
+        self.update_file_list(**kw)
         self.dd_file_path.observe(self.on_path_change,'value')
         
         self.dd_x = widgets.Dropdown(layout={'width':'110px'})
@@ -451,8 +451,11 @@ class Player:
             self.dd_y.value = vx# this will trigger a change event
 
         
-    def update_file_list(self):
-        f_list = [i for i in os.listdir() if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
+    def update_file_list(self,**kw):
+        if 'file_list' in kw:
+            f_list = kw['file_list']
+        else:
+            f_list = [i for i in os.listdir() if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
         self.dd_file_path.options = f_list
             
     def on_show_cuts_change(self,change):
