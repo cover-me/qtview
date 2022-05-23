@@ -1,0 +1,37 @@
+{
+  "content": [
+    {
+      "content": null,
+      "created": "2022-05-23T22:04:06.226904Z",
+      "format": null,
+      "last_modified": "2022-05-23T22:02:59.353641Z",
+      "mimetype": "text/x-python",
+      "name": "download_qtview.py",
+      "path": "utils/download_qtview.py",
+      "size": 799,
+      "type": "file",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2022-05-23T22:04:06.226904Z",
+      "format": null,
+      "last_modified": "2022-05-23T22:02:59.353641Z",
+      "mimetype": "text/x-python",
+      "name": "jupyterlitetools.py",
+      "path": "utils/jupyterlitetools.py",
+      "size": 25761,
+      "type": "file",
+      "writable": true
+    }
+  ],
+  "created": "2022-05-23T22:04:06.226904Z",
+  "format": "json",
+  "last_modified": "2022-05-23T22:04:06.226904Z",
+  "mimetype": null,
+  "name": "utils",
+  "path": "utils",
+  "size": null,
+  "type": "directory",
+  "writable": true
+}
