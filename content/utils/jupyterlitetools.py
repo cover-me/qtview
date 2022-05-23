@@ -176,6 +176,6 @@ async def zenodo_downloader(record_id, file_name, overwrite=True):
             break
     url = file_dict['links']['self']
     print(f'Size: {file_dict["size"]/1e6} MB, downloading...')
-    await jupyterlitetools.url_to_mem(url,file_name,overwrite=True)
+    await url_to_mem(url,file_name,overwrite=True)
     print('Done!')
 
