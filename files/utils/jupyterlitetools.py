@@ -173,10 +173,14 @@ if 'pyolite' in sys.modules:# if jupyterlite
         url = f'https://zenodo.org/api/records/{record_id}'
         resp = await pyfetch(url)
         record_meta = await resp.json()
+        found = False
         for i in record_meta['files']:
             if i['key'] == file_name:
                 file_dict = i
+                found = True
                 break
+        if not found:
+            raise Exception('File not found.')
         url = file_dict['links']['self']
         print(f'Size: {file_dict["size"]/1048576} MB, downloading...')
         await download_file(url,file_name,overwrite)
