@@ -178,10 +178,30 @@ if 'pyolite' in sys.modules:# if jupyterlite
                 file_dict = i
                 break
         url = file_dict['links']['self']
-        print(f'Size: {file_dict["size"]/1e6} MB, downloading...')
-        await url_to_mem(url,file_name,overwrite=True)
+        print(f'Size: {file_dict["size"]/1048576} MB, downloading...')
+        await download_file(url,file_name,overwrite)
         print('Done!')
         
+    async def download_file(url,path,overwrite=False):
+        if os.path.exists(path) and not overwrite:
+            print(f'File "{mem_path}" already exists, will not overwrite')
+            return
+        resp = await js.fetch(url)
+        file_size = float(resp.headers.get('content-length'))
+        reader = resp.body.getReader()
+        with open (path,'wb') as f:
+            counter = 0
+            counter2 = 0
+            while 1:
+                chunk = (await reader.read()).to_py()
+                if chunk['done']:
+                    break
+                f.write(chunk['value'])
+                counter += len(chunk['value'])
+                counter2 += 1
+                if counter2%100==0:
+                    print(f'\r{counter/file_size:.0%}',end='')
+            print()
 else:
     import requests,os
     def zenodo_downloader(record_id, file_name, overwrite=True):
@@ -212,5 +232,3 @@ else:
                 if counter%1024 == 0:
                     print(f'\r{counter/file_size:.0%}',end='')
             print()
-        
-
