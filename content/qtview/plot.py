@@ -9,7 +9,7 @@ def get_default_ps():
     '''
     return a defult plot setting
     '''
-    return {'labels':['','',''],'gamma':0,'gmode':'moveColor',
+    return {'labels':['','',''],'xyUniform':True,'gamma':0,'gmode':'moveColor',
           'cmap':'seismic','vmin':None, 'vmax':None,'plotCbar':True}
 
 def plot(fpath,**kw):
@@ -33,7 +33,7 @@ def plot2d(data,**kw):
 
     #save fig data
     if 'figdatato' in kw and kw['figdatato']:
-        save2d(kw['figdatato'],x,y,w,ps['labels'])
+        save2d(kw['figdatato'],x,y,w,ps['labels'],ps['xyUniform'])
 
     if 'ax' in kw and 'fig' in kw:
         # sometimes you want to use your own ax
@@ -54,17 +54,17 @@ def plot2d(data,**kw):
         else:# matplotlib default style
             imkw['norm'] = mpl.colors.PowerNorm(gamma=gamma_real)
 
-    # No longer use imshow.
-    # if ps['xyUniform']:
-    #     #data need to be autoflipped when imported
-    #     xy_range = (x1[0,0],x1[0,-1],y1[0,0],y1[-1,0])
-    #     im = ax.imshow(w,aspect='auto',interpolation='nearest',origin='lower',extent=xy_range,**imkw)
-    #     #If there is only one dataset, clip the image a little to set xy limits to true numbers
-    #     if ax.get_xlim() + ax.get_ylim() == xy_range:               
-    #         ax.set_xlim(x[0,0],x[0,-1])
-    #         ax.set_ylim(y[0,0],y[-1,0])
-    # else:
-    im = ax.pcolormesh(x1,y1,w,rasterized=True,**imkw)
+    #Imshow is better than pcolormesh if it xy is uniformly spaced. See the links in operation._get_quad() description.
+    if ps['xyUniform']:
+        #data need to be autoflipped when imported
+        xy_range = (x1[0,0],x1[0,-1],y1[0,0],y1[-1,0])
+        im = ax.imshow(w,aspect='auto',interpolation='nearest',origin='lower',extent=xy_range,**imkw)
+        #If there is only one dataset, clip the image a little to set xy limits to true numbers
+        if ax.get_xlim() + ax.get_ylim() == xy_range:               
+            ax.set_xlim(x[0,0],x[0,-1])
+            ax.set_ylim(y[0,0],y[-1,0])
+    else:
+        im = ax.pcolormesh(x1,y1,w,rasterized=True,**imkw)
 
     if ps['plotCbar']:
         if type(ps['plotCbar']) == dict:
@@ -164,4 +164,3 @@ def formatLabel(fname,s):
             for key_, value_ in value.items():
                 s = s.replace('<%s:%s>'%(key,key_), '%s'%value_)
     return s
-
