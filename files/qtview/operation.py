@@ -6,6 +6,7 @@ Data shape: Any shape. Usually, it looks like: [x,y,w,...] and each of x,y,w,...
 '''
 
 import numpy as np
+import scipy.ndimage, scipy.integrate
 
 def _create_kernel(x_dev, y_dev, cutoff, distr):
     distributions = {
@@ -30,48 +31,68 @@ def _create_kernel(x_dev, y_dev, cutoff, distr):
     return kernel
 
 def _get_quad(x):
+    s1,s2 = x.shape
+    if s1>1 and s2>1:
+        return _get_quad_2d(x)
+    else:
+        return _get_quad_1d(x)
+
+def _get_quad_2d(x):
     '''
     Calculate patch (quadrilateral) corners for 2d plot.
-    pcolormesh() need this method for non-evenly spaced XY coordinates.
-    imshow() don't use this. It assumes XY coordinates are evenly spaced.
     See: https://cover-me.github.io/2019/02/17/Save-2d-data-as-a-figure.html, https://cover-me.github.io/2019/04/04/Save-2d-data-as-a-figure-II.html
     '''
     s1,s2 = x.shape
+    if s1<2 or s2<2:
+        raise Exception('Not a 2d data.')
     x_pad = np.full((s1+2,s2+2), np.nan)
     x_pad[1:-1,1:-1] = x
     
-    if s1>1:
-        b1, b2 = x_pad[1], x_pad[2]
-        t1, t2 = x_pad[-2], x_pad[-3]
-        x_pad[0] = 2*b1 - b2
-        x_pad[-1] = 2*t1 - t2
-    else:
-        x_pad[0] = x_pad[1] - 1
-        x_pad[-1] = x_pad[1] + 1
-        
+    b1, b2 = x_pad[1], x_pad[2]
+    t1, t2 = x_pad[-2], x_pad[-3]
+    x_pad[0] = 2*b1 - b2
+    x_pad[-1] = 2*t1 - t2
 
-
-    if s2>1: 
-        l1, l2 = x_pad[:,1], x_pad[:,2]
-        r1, r2 = x_pad[:,-2], x_pad[:,-3]
-        x_pad[:,0] = 2*l1 - l2
-        x_pad[:,-1] = 2*r1 - r2
-    else:
-        x_pad[:,0] = x_pad[:,1] - 1
-        x_pad[:,-1] = x_pad[:,1] + 1
+    l1, l2 = x_pad[:,1], x_pad[:,2]
+    r1, r2 = x_pad[:,-2], x_pad[:,-3]
+    x_pad[:,0] = 2*l1 - l2
+    x_pad[:,-1] = 2*r1 - r2
     
     x_quad = (x_pad[:-1,:-1]+x_pad[:-1,1:]+x_pad[1:,:-1]+x_pad[1:,1:])/4.
     
     return x_quad
 
+def _get_quad_1d(x):
+    s1,s2 = x.shape
+    if (s1!=1 and s2!=1) or (s1==s2==1):
+        raise Exception('Not a 1d data.')
+    x=x.reshape(s1*s2)
+    
+    l1, l2 = x[0], x[1]
+    r1, r2 = x[-1], x[-2]
+    xl = 2*l1 - l2
+    xr = 2*r1 - r2
+    
+    x = np.concatenate([[xl],x,[xr]])  
+    if all(x==x[0]):
+        x = np.vstack([x-1,x,x+1])
+    else:
+        x = np.vstack([x,x,x])       
+    if s2==1:
+        x = x.T
+    x_quad = (x[:-1,:-1]+x[:-1,1:]+x[1:,:-1]+x[1:,1:])/4.
+    
+    return x_quad
+  
+    
 # filters
 
 def yderiv(d):
     '''
-    y derivative, slightly different from qtplot
-    https://en.wikipedia.org/wiki/Finite_difference_coefficient
-    https://docs.scipy.org/doc/numpy/reference/generated/numpy.gradient.html
+    Y-derivative (slightly different from qtplot)
     '''
+    # https://en.wikipedia.org/wiki/Finite_difference_coefficient
+    # https://docs.scipy.org/doc/numpy/reference/generated/numpy.gradient.html
     y = d[1]
     z = d[2]
     dzdy0 = (z[1]-z[0])/(y[1]-y[0])
@@ -84,10 +105,10 @@ def yderiv(d):
 
 def xderiv(d):
     '''
-    x derivative, slightly different from qtplot
-    https://en.wikipedia.org/wiki/Finite_difference_coefficient
-    https://docs.scipy.org/doc/numpy/reference/generated/numpy.gradient.html
+    X derivative (slightly different from qtplot)
     '''
+    # https://en.wikipedia.org/wiki/Finite_difference_coefficient
+    # https://docs.scipy.org/doc/numpy/reference/generated/numpy.gradient.html
     x = d[0]
     z = d[2]
     dzdx0 = (z[:,1]-z[:,0])/(x[:,1]-x[:,0])
@@ -100,7 +121,7 @@ def xderiv(d):
 
 def yintegrate(d):
     '''
-    y integration
+    Y integration.
     '''
     y = d[1]
     dy = abs(y[1,0]-y[0,0])
@@ -109,9 +130,11 @@ def yintegrate(d):
 
 
 def lowpass(d, x_width=0.5, y_height=0.5, method='gaussian'):
-    """Perform a low-pass filter."""
+    """
+    Perform a low-pass filter.
+    """
     z = d[2]
-    kernel = Operation._create_kernel(x_width, y_height, 7, method)
+    kernel = _create_kernel(x_width, y_height, 7, method)
     z[:] = scipy.ndimage.filters.convolve(z, kernel)
     return d
 
@@ -134,15 +157,21 @@ def offset(d,x=[0,0,0]):
     return d
 
 
-def g_in_g2(d, rin):
-    """z = z/(1-(z*Rin))/7.74809e-5. z: conductance in unit 'S', R in unit 'ohm' (SI units)"""
+def g_in_g2(d, rin=0):
+    """
+    Subtract Rin and normalize to 2e^2/h = 7.74809e-5 S
+    z = z/(1-(z*Rin))/7.74809e-5.
+    z: conductance in the unit of S
+    """
     G2 = 7.74809e-5#ohm^-1, 2e^2/h
     d[2] = d[2]/(1-(d[2]*rin))/G2
     return d
 
 
 def xy_limit(d,xmin=None,xmax=None,ymin=None,ymax=None):
-    '''Crop data with xmin,xmax,ymin,ymax'''
+    '''
+    Crop data with xmin,xmax,ymin,ymax
+    '''
     x = d[0]
     y = d[1]
     if not all([i is None for i in [xmin,xmax,ymin,ymax]]):
@@ -150,13 +179,15 @@ def xy_limit(d,xmin=None,xmax=None,ymin=None,ymax=None):
         x2 = -1 if xmax is None else np.searchsorted(x[0],xmax,'right')-1
         y1 = 0 if ymin is None else np.searchsorted(y[:,0],ymin)
         y2 = -1 if ymax is None else np.searchsorted(y[:,0],ymax,'right')-1
-        return Operation.crop(d,x1,x2,y1,y2)
+        return crop(d,x1,x2,y1,y2)
     else:
         return d
 
 
 def crop(d, left=0, right=-1, bottom=0, top=-1):
-    """Crop data by indexes. First and last values included"""
+    """
+    Crop data by indexes. First and last values included
+    """
     right = d[0].shape[1] + right + 1 if right < 0 else right + 1
     top = d[0].shape[0] + top + 1 if top < 0 else top + 1
     if (0 <= left < right <= d[0].shape[1] 
@@ -165,10 +196,23 @@ def crop(d, left=0, right=-1, bottom=0, top=-1):
     else:
         raise ValueError('Invalid crop parameters: (%s,%s,%s,%s)'%(left,right,bottom,top))
 
+def abs_z(d):
+    '''
+    d = [X,Y,Z,...]. Take the absolute value of Z.
+    '''
+    d[2] = np.abs(d[2])
+    return d
+
+def log10_z(d):
+    '''
+    d = [X,Y,Z,...]. Calculate log10(Z).
+    '''
+    d[2] = np.log10(d[2])
+    return d
 
 def autoflip(d):
     '''
-    Make the order of elements in x and y good for imshow() and filters
+    Flip the data so that the X and Y-axes increase in column and row, respectively.
     '''
     x = d[0]
     y = d[1]
@@ -218,25 +262,26 @@ def linecut(d,x=None,y=None):
     '''
     Return a slice of d with x or y. Assume XY coordinates on 2d grid.
     '''
-    if (x is None and y is None) or (x is None and len(np.shape(y))>0) or (y is None and len(np.shape(x))>0):
-        raise ValueError('Invalid parameters for linecut')
-
+    if x is None and y is None:
+        return d
     # vcut
-    if y is None:
+    elif y is None:
         x0 = d[0][0]
         indx = np.abs(x0 - x).argmin()
         return d[:,:,[indx]]
-
-
     # hcut
-    if x is None:
+    elif x is None:
         y0 = d[1][:,0]
         indy = np.abs(y0 - y).argmin()
         return d[:,[indy],:]
+    else:
+        raise Exception('Can not cut x and y simultaneously.')
 
 
-def hist2d(d, z_min, z_max, bins):
-    """Convert every column into a histogram, default bin amount is sqrt(n)."""
+def hist2d(d, z_min=0, z_max=1, bins=10):
+    """
+    Convert every column into a histogram
+    """
     X,Y,Z = d[:3]
     hist = np.apply_along_axis(lambda x: np.histogram(x, bins, (z_min, z_max))[0], 0, Z)
 
