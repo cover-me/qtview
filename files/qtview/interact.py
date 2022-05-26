@@ -192,7 +192,7 @@ class Operations:
                     name = arg_names[counter]
                     label = i[1].children[counter*2].value
                     if name != label:
-                        raise "Error parameters."
+                        raise Exception("Error parameters.")
                     val_default = arg_defaults[counter]
                     val_str = i[1].children[counter*2+1].value
                     if type(val_default)==str:
@@ -257,7 +257,7 @@ class Player:
     '''
     def __init__(self,**kw):
         if not mpl.get_backend() == 'module://ipympl.backend_nbagg':
-            raise "Need ipympl backend."
+            raise Exception("Need ipympl backend.")
             
         self.counter = 0# should remove in the future
  
@@ -349,7 +349,7 @@ class Player:
         
         self.dd_data_type = widgets.Dropdown(value='dat', options=['dat','npz','mtx'], description='Save as',disabled=False,layout={'width':'95px'})
         self.dd_data_source = widgets.Dropdown(value='figure', options=['figure','linecuts','raw'], description='Save from',disabled=False,layout={'width':'125px'})
-        self.dd_plot_method = widgets.Dropdown(options=['imshow (default)','pcolormesh: if XY non-uniformly spaced'], description='Plot by',disabled=False,layout={'width':'125px'})
+        self.dd_plot_method = widgets.Dropdown(options=['imshow (default, faster)','pcolormesh: if XY non-uniformly spaced'], description='Plot by',disabled=False,layout={'width':'125px'})
 
         ## information area
         self.html_info = widgets.HTML(value='Left-click on the image to show linecuts.',layout={'width':'auto'})
