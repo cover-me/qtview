@@ -29,12 +29,6 @@
       {
         "extension": "./extension",
         "liteExtension": false,
-        "load": "static/remoteEntry.bf6b3192a558615425cd.js",
-        "name": "@telamonian/theme-darcula"
-      },
-      {
-        "extension": "./extension",
-        "liteExtension": false,
         "load": "static/remoteEntry.145e469029155b53b350.js",
         "name": "@timkpaine/jupyterlab_miami_nights"
       },
@@ -59,12 +53,6 @@
       {
         "extension": "./extension",
         "liteExtension": false,
-        "load": "static/remoteEntry.6375e54406c677384240.js",
-        "name": "jupyter-leaflet"
-      },
-      {
-        "extension": "./extension",
-        "liteExtension": false,
         "load": "static/remoteEntry.509ecd914d0df11eb8e1.js",
         "name": "jupyter-matplotlib"
       },
@@ -74,13 +62,6 @@
         "load": "static/remoteEntry.8f896d6ad92823566c46.js",
         "name": "jupyterlab-drawio",
         "style": "./style"
-      },
-      {
-        "extension": "./extension",
-        "liteExtension": false,
-        "load": "static/remoteEntry.e36921af02dc11718a41.js",
-        "mimeExtension": "./mimeExtension",
-        "name": "jupyterlab-plotly"
       },
       {
         "extension": "./extension",
