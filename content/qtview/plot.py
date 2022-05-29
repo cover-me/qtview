@@ -60,9 +60,9 @@ def plot2d(data,**kw):
         xy_range = (x1[0,0],x1[0,-1],y1[0,0],y1[-1,0])
         im = ax.imshow(w,aspect='auto',interpolation='nearest',origin='lower',extent=xy_range,**imkw)
         #If there is only one dataset, clip the image a little to set xy limits to true numbers
-        if ax.get_xlim() + ax.get_ylim() == xy_range:               
-            ax.set_xlim(x[0,0],x[0,-1])
-            ax.set_ylim(y[0,0],y[-1,0])
+        # if ax.get_xlim() + ax.get_ylim() == xy_range:      
+        #     ax.set_xlim(x[0,0],x[0,-1])
+        #     ax.set_ylim(y[0,0],y[-1,0])
     else:
         im = ax.pcolormesh(x1,y1,w,rasterized=True,**imkw)
 
