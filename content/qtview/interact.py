@@ -269,6 +269,8 @@ class Player:
         self.figures = None
         self.axes = None
         self.lines = None
+        self.data_hcut = None
+        self.data_vcut = None
         
         self.init_ui(**kw)        
         self.init_export_folder()
@@ -309,28 +311,36 @@ class Player:
         
         # toolbox2
         
-        ## Dropdowns
-        self.dd_file_path = widgets.Dropdown(description='',layout={'width':'100px'})# tooltip does not work at this moment
-        self.update_file_list(**kw)
-        self.dd_file_path.observe(self.on_path_change,'value')
+        ## information area
+        self.html_info = widgets.HTML(value='Left-click on the image to show linecuts.',layout={'width':'auto'})
         
-        self.dd_x = widgets.Dropdown(layout={'width':'110px'})
+        ## Dropdowns
+        self.dd_folder = widgets.Dropdown(description='Folder',layout={'width':'120px'})# tooltip does not work at this moment
+        self.dd_folder.observe(self.on_folder_change,'value')
+        self.dd_file = widgets.Dropdown(description='File',layout={'width':'120px'})# tooltip does not work at this moment
+        self.init_file_list(**kw)
+        self.dd_file.observe(self.on_path_change,'value')
+        
+        self.dd_x = widgets.Dropdown(description='X',layout={'width':'144px'})
         self.dd_x.observe(self.operations.on_data_change,'value')
         
-        self.dd_y = widgets.Dropdown(layout={'width':'110px'})
+        self.dd_y = widgets.Dropdown(description='Y',layout={'width':'144px'})
         self.dd_y.observe(self.operations.on_data_change,'value')
         
-        self.dd_z = widgets.Dropdown(layout={'width':'110px'})
+        self.dd_z = widgets.Dropdown(description='Z',layout={'width':'144px'})
         self.dd_z.observe(self.operations.on_data_change,'value')
         
         ## Sliders
-        self.slider_gamma = widgets.IntSlider(value=0,min=-100,max=100,step=1,description='gamma',layout={'width':'150px'})
+        self.slider_gamma = widgets.IntSlider(value=0,min=-100,max=100,step=1,description='gamma',layout={'width':'230px'})
         self.slider_gamma.observe(self.on_gamma_change,'value')
         
-        self.slider_vlim = widgets.FloatRangeSlider(value=[0,1], min=0, max=1, step=0.01, description='clim',readout_format='.2e',layout={'width':'280px'})
+        self.slider_vlim = widgets.FloatRangeSlider(value=[0,1], min=0, max=1, step=0.01, description='clim',readout_format='.2e',layout={'width':'300px'})
         self.slider_vlim.observe(self.on_vlim_change,'value')
         
         ## Buttons and checks
+        self.btn_upload = widgets.FileUpload(accept='.dat,.npy,.mtx',multiple=True,layout={'width':'100px'})
+        self.btn_upload.observe(self.on_file_uploaded,'value')
+        
         self.btn_swp_xy = widgets.Button(description='Swap XY',layout={'width':'80px'})
         self.btn_swp_xy.on_click(self.on_swp_xy)
         
@@ -346,20 +356,17 @@ class Player:
 
 
         ## Dropdowns2
-        self.dd_cmap = widgets.Dropdown(value='seismic', options=plt.colormaps(), description='cmap:', indent=False, disabled=False, layout={'width':'130px'})
+        self.dd_cmap = widgets.Dropdown(value='seismic', options=plt.colormaps(), description='cmap', indent=False, disabled=False, layout={'width':'130px'})
         self.dd_cmap.observe(self.on_cmap_change,'value')
         
         self.dd_data_type = widgets.Dropdown(value='dat', options=['dat','npz','mtx'], description='Save as',disabled=False,layout={'width':'95px'})
         self.dd_data_source = widgets.Dropdown(value='figure', options=['figure','linecuts','raw'], description='Save from',disabled=False,layout={'width':'125px'})
         self.dd_plot_method = widgets.Dropdown(options=['imshow (default, faster)','pcolormesh: if XY non-uniformly spaced'], description='Plot by',disabled=False,layout={'width':'125px'})
-
-        ## information area
-        self.html_info = widgets.HTML(value='Left-click on the image to show linecuts.',layout={'width':'auto'})
         
-        widget_lines = []
-        widget_lines.append(widgets.HBox([self.dd_file_path,self.dd_x,self.dd_y,self.dd_z]))
-        widget_lines.append(widgets.HBox([self.slider_gamma,self.slider_vlim]))
-        widget_lines.append(widgets.HBox([self.dd_cmap,self.b_reset,self.btn_swp_xy,self.c_auto_reset,self.c_show_cuts])) 
+        widget_lines = [widgets.HBox([self.dd_folder,self.dd_file,self.btn_upload,self.btn_swp_xy])]
+        widget_lines.append(widgets.HBox([self.dd_x,self.dd_y,self.dd_z]))
+        widget_lines.append(widgets.HBox([self.slider_gamma,self.dd_cmap,self.b_reset]))
+        widget_lines.append(widgets.HBox([self.slider_vlim,self.c_auto_reset,self.c_show_cuts]))
         widget_lines.append(widgets.HBox([self.dd_data_type,self.dd_data_source,self.b_save_data,self.dd_plot_method]))
         widget_lines.append(self.html_info)
 
@@ -392,10 +399,10 @@ class Player:
             # i.canvas.toolbar_visible = True
             i.canvas.toolbar_position = 'left'
             i.canvas.resizable = True
-
+        
     def on_path_change(self,change=None):
         # fpath can be path, path inside zip, or url (url fetch is limited in JupyterLite, based on js, need to add "await" and run in independent cells)
-        fpath = self.dd_file_path.value
+        fpath = os.path.join(self.dd_folder.value,self.dd_file.value)
         self.clear_linecuts()
         if self.d is None:
             self.d = data.Data2d(fpath)
@@ -453,13 +460,44 @@ class Player:
             self.dd_y.value = vx# this will trigger a change event
 
         
-    def update_file_list(self,**kw):
+    def init_file_list(self,**kw):
         if 'file_list' in kw:
             f_list = kw['file_list']
+            self.dd_file.options = f_list
         else:
-            f_list = [i for i in os.listdir() if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
-        self.dd_file_path.options = f_list
-    
+            self.dd_folder.options = '.'
+        
+    def on_folder_change(self,change=None):
+        current_folder = os.path.abspath(self.dd_folder.value)
+        parent = os.path.split(current_folder)[0]
+        if os.path.isdir(current_folder):
+            cwd = os.path.abspath('.')
+            sub_files = os.listdir(current_folder)
+            sub_folders = [current_folder,parent] + [os.path.abspath(i) for i in sub_files if os.path.isdir(i) or i.endswith('.zip')]
+            sub_folders = [os.path.relpath(i) for i in sub_folders if i.startswith(cwd)]
+            sub_files = [i for i in sub_files if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
+            self.dd_folder.options = sub_folders
+            self.dd_file.options = sub_files
+        elif os.path.endswith('.zip'):
+            with zipfile.ZipFile(file_name) as zf:
+                self.dd_folder.options = [current_folder,parent]
+                sub_files = [i for i in zf.namelist() if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
+            
+    def on_file_uploaded(self,change=None):
+        self.btn_upload._counter = len(self.btn_upload.metadata)
+
+        folder = self.dd_folder.value
+        if not os.path.isdir(folder):
+            folder = os.path.split(folder)[0]
+        for i in self.btn_upload.value.keys():
+            with open(os.path.join(folder,i),'wb') as f:
+                f.write(self.btn_upload.value[i]['content'])
+
+        self.btn_upload.data.clear()
+        self.btn_upload.metadata.clear()
+        self.btn_upload.value.clear()
+        self.on_folder_change()
+
     def redraw_canvas(self,figs):
         if IN_JUPYTER_LITE:
             for i in figs:
@@ -470,13 +508,18 @@ class Player:
             self.html_info.value = ''
             self.clear_linecuts()
             self.redraw_canvas(self.figures)
+        else:
+            self.on_cut_pos_change(None)
             
         
     def on_cut_pos_change(self,click_event):
         if self.c_show_cuts.value and self.d is not None:
-            x, y = click_event.xdata, click_event.ydata
-            hx,hy,hz = np.copy(operation.linecut(self.d.data,y=y).reshape(3,-1))# [X, Y0, Z]
-            vx,vy,vz = np.copy(operation.linecut(self.d.data,x=x).reshape(3,-1))# [X0, Y, Z]
+            if click_event:
+                x, y = click_event.xdata, click_event.ydata
+                self.data_hcut = operation.linecut(self.d.data,y=y)
+                self.data_vcut = operation.linecut(self.d.data,x=x)
+            hx,hy,hz = np.copy(self.data_hcut.reshape(3,-1))# [X, Y0, Z]
+            vx,vy,vz = np.copy(self.data_vcut.reshape(3,-1))# [X0, Y, Z]
             self.html_info.value = 'Cuts at (%s,%s)'%(vx[0],hy[0])# may be slightly different from x,y
             ax,axh,axv = self.axes
 
@@ -651,11 +694,11 @@ class Player:
         
         # vlincut
         fnamev = '%s/%s.vcut.%s'%(self.export_folder,fname,d_type)
-        self.d.save_data(fnamev,self.d_vcut[:,np.newaxis,:],self.d.labels)# save_data only takes 2d data
+        self.d.save_data(fnamev,self.data_vcut,self.d.labels)# save_data only takes 2d data
 
         # hlincut
         fnameh = '%s/%s.hcut.%s'%(self.export_folder,fname,d_type)
-        self.d.save_data(fnameh,self.d_hcut[:,np.newaxis,:],self.d.labels)
+        self.d.save_data(fnameh,self.data_hcut,self.d.labels)
 
         self.html_info.value = 'Files saved: %s<br>%s'%(fnamev,fnameh)
         
