@@ -24,3 +24,5 @@ Files in the file broswer (on the left) and files in the kernel (not visible) do
 If we drag and drop files to the file browser in JupyterLite, files would get truncated if they are large.
 
 The scipy module increases the loading time in JupyterLite from 20 s to 30 s.
+
+In ipywidget 7, the minimum step in a float slider can not be smaller than 1e-5 (or -6, not sure).
