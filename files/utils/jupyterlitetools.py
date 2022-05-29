@@ -76,7 +76,7 @@ if 'pyolite' in sys.modules:# if jupyterlite
 
         if content:
             path_list = await list_browser_files()# include files in subfolders
-            is_file_exist = path in path_list
+            is_file_exist = path in path_list if path_list else False
 
             if is_file_exist and not overwrite:
                 print(f'File "{path}" already exists, will not overwrite')
