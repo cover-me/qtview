@@ -1,6 +1,6 @@
 # qtlab data viewer
 
-This is the Jupyter notebook version of qtplot. Click the badges below to see notebooks.
+This is the Jupyter notebook version of qtplot ([modified](https://github.com/cover-me/qtplot) or [original](https://github.com/Rubenknex/qtplot) version). Click the badges below to play with notebooks and data.
 
 JupyterLite (code run locally in the sandbox of the browser. open immediately, but may take half a minute to download modules when running the first cell):
 
