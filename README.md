@@ -1,14 +1,11 @@
 # qtlab data viewer
 
-Click the badge.
+Click the badges to see notebooks.
 
-JupyterLite:
-
-[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://cover-me.github.io/qtview/lab?path=Interactive%20plot%20demo.ipynb)
-
-Binder (May take minutes to load):
-
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cover-me/qtview/main?labpath=content%2FInteractive%20plot%20demo.ipynb)
+JupyterLite
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://cover-me.github.io/qtview/lab?path=Exampl%20interactive%20plot.ipynb),
+or Binder (May take minutes to load)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cover-me/qtview/main?labpath=content%2FExample%20interactive%20plot.ipynb)
 
 
 # miscellaneous:
