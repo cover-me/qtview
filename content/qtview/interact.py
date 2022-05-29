@@ -1,5 +1,5 @@
 from . import data, operation, plot
-import os,inspect,ast,sys
+import os,inspect,ast,sys,zipfile
 import matplotlib as mpl
 import matplotlib.pylab as plt
 import ipywidgets as widgets
@@ -402,7 +402,10 @@ class Player:
         
     def on_path_change(self,change=None):
         # fpath can be path, path inside zip, or url (url fetch is limited in JupyterLite, based on js, need to add "await" and run in independent cells)
-        fpath = os.path.join(self.dd_folder.value,self.dd_file.value)
+        if self.dd_folder.value:
+            fpath = os.path.join(self.dd_folder.value,self.dd_file.value)
+        else:
+            fpath = self.dd_file.value
         self.clear_linecuts()
         if self.d is None:
             self.d = data.Data2d(fpath)
@@ -478,10 +481,10 @@ class Player:
             sub_files = [i for i in sub_files if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
             self.dd_folder.options = sub_folders
             self.dd_file.options = sub_files
-        elif os.path.endswith('.zip'):
-            with zipfile.ZipFile(file_name) as zf:
-                self.dd_folder.options = [current_folder,parent]
-                sub_files = [i for i in zf.namelist() if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
+        elif current_folder.endswith('.zip'):
+            with zipfile.ZipFile(current_folder) as zf:
+                self.dd_folder.options = [os.path.relpath(i) for i in [current_folder,parent]]
+                self.dd_file.options = [i for i in zf.namelist() if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
             
     def on_file_uploaded(self,change=None):
         self.btn_upload._counter = len(self.btn_upload.metadata)
