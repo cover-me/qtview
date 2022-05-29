@@ -1,6 +1,6 @@
 # qtlab data viewer
 
-Click the badges to see notebooks.
+This is the Jupyter notebook version of qtplot. Click the badges below to see notebooks.
 
 JupyterLite (code run locally in the sandbox of the browser. open immediately, but may take half a minute to download modules when running the first cell):
 
@@ -9,6 +9,10 @@ JupyterLite (code run locally in the sandbox of the browser. open immediately, b
 Binder (code run on an online server, may take minutes to initialize, fast after initializated):
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cover-me/qtview/main?labpath=content%2FExample%20interactive%20plot.ipynb)
+
+
+![image](https://user-images.githubusercontent.com/22870592/170893035-82dd74b5-9790-4ab7-b71a-dfcf98386990.png)
+
 
 
 # miscellaneous:
