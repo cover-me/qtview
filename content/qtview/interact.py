@@ -1,9 +1,11 @@
 from . import data, operation, plot
-import os,inspect,ast
+import os,inspect,ast,sys
 import matplotlib as mpl
 import matplotlib.pylab as plt
 import ipywidgets as widgets
 import numpy as np
+
+IN_JUPYTER_LITE = 'pyolite' in sys.modules
 
 
 LAYOUT_BTN = widgets.Layout(height='25',padding='0px',margin='0px',width='100px')
@@ -457,13 +459,17 @@ class Player:
         else:
             f_list = [i for i in os.listdir() if os.path.splitext(i)[1] in ['.dat','.mtx','.npy']]
         self.dd_file_path.options = f_list
+    
+    def redraw_canvas(self,figs):
+        if IN_JUPYTER_LITE:
+            for i in figs:
+                i.canvas.draw()
             
     def on_show_cuts_change(self,change):
         if not change['new']:
             self.html_info.value = ''
             self.clear_linecuts()
-            self.figures[0].canvas.draw()
-            self.figures[1].canvas.draw()
+            self.redraw_canvas(self.figures)
             
         
     def on_cut_pos_change(self,click_event):
@@ -494,8 +500,7 @@ class Player:
                 self.lines += axh.plot(hx,hz,'tab:blue')  
                 self.lines += axv.plot(vz,vy,'tab:orange')
                 
-            self.figures[0].canvas.draw()
-            self.figures[1].canvas.draw()
+            self.redraw_canvas(self.figures)
 
         
     def reset_cmap(self,event=None,silent=False):
@@ -588,8 +593,7 @@ class Player:
         if self.counter == 0:# somehow if we canvas.draw() at the first time the figure would disappear.
             self.counter = 1
         else:
-            self.figures[0].canvas.draw()
-            self.figures[1].canvas.draw()
+            self.redraw_canvas(self.figures)
 
         
     def on_gamma_change(self,change):
@@ -602,18 +606,18 @@ class Player:
             self.im.set_cmap(plot._get_cmap_gamma(cmpname,g,1024))
         else:
             self.im.set_cmap(cmpname)
-        self.figures[0].canvas.draw()
+        self.redraw_canvas([self.figures[0]])
 
     def on_cmap_change(self,change):
         cmap = change['new']
         if cmap in plt.colormaps():
             self.im.set_cmap(cmap)
-        self.figures[0].canvas.draw()
+        self.redraw_canvas([self.figures[0]])
     
     def on_vlim_change(self,change):
         v0,v1 = change['new']
         self.im.set_clim(v0,v1)
-        self.figures[0].canvas.draw()
+        self.redraw_canvas([self.figures[0]])
 
     def save_data(self,event=None):
         if self.dd_data_source.value == 'figure':
