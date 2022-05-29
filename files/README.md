@@ -2,9 +2,12 @@
 
 Click the badges to see notebooks.
 
-JupyterLite
+JupyterLite (code run locally in the sandbox of the browser. open immediately, but may take half a minute to download modules when running the first cell.):
+
 [![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://cover-me.github.io/qtview/lab?path=Example+interactive+plot.ipynb),
-or Binder (may take minutes to load)
+
+Binder (code run on an online server, may take minutes to initialize, fast after initializated.):
+
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cover-me/qtview/main?labpath=content%2FExample%20interactive%20plot.ipynb)
 
 
@@ -15,3 +18,5 @@ To find stored files (Chrome): shift + right-click (or right-click if not in Jup
 Files in the file broswer (on the left) and files in the kernel (not visible) do not sync in JupyterLite at this moment.
 
 If we drag and drop files to the file browser in JupyterLite, files would get truncated if they are large.
+
+The scipy module increases the loading time in JupyterLite from 20 s to 30 s.
