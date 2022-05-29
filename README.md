@@ -2,11 +2,11 @@
 
 Click the badges to see notebooks.
 
-JupyterLite (code run locally in the sandbox of the browser. open immediately, but may take half a minute to download modules when running the first cell.):
+JupyterLite (code run locally in the sandbox of the browser. open immediately, but may take half a minute to download modules when running the first cell):
 
-[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://cover-me.github.io/qtview/lab?path=Example+interactive+plot.ipynb),
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://cover-me.github.io/qtview/lab?path=Example+interactive+plot.ipynb)
 
-Binder (code run on an online server, may take minutes to initialize, fast after initializated.):
+Binder (code run on an online server, may take minutes to initialize, fast after initializated):
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cover-me/qtview/main?labpath=content%2FExample%20interactive%20plot.ipynb)
 
