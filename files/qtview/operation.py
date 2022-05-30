@@ -4,7 +4,6 @@ Methods with names start with '_': auxiliary operations.
 The rest: filters who modify the data directly! No returned values.
 Data shape: Any shape. Usually, it looks like: [x,y,w,...] and each of x,y,w,... is a 2d matrix.
 '''
-
 import numpy as np
 import scipy.ndimage, scipy.integrate
 
@@ -293,3 +292,10 @@ def hist2d(d, z_min=0, z_max=1, bins=10):
     Z = hist
 
     return np.stack([X,Y,Z])
+
+def from_code(d,code='# d = yderiv(d)\n'):
+    '''
+    Run from a customized string.
+    '''
+    exec(code)
+    return d
