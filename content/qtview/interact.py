@@ -1,5 +1,5 @@
 from . import data, operation, plot
-import os,inspect,ast,sys,zipfile
+import os,inspect,ast,sys,zipfile,json
 import matplotlib as mpl
 import matplotlib.pylab as plt
 import ipywidgets as widgets
@@ -9,8 +9,7 @@ IN_JUPYTER_LITE = 'pyolite' in sys.modules
 
 
 LAYOUT_BTN = widgets.Layout(height='25',padding='0px',margin='0px',width='100px')
-LAYOUT_LABEL = widgets.Layout(height='25px',padding='0px',width='100px')
-LAYOUT_INPUT = widgets.Layout(height='25px',padding='0px',width='100px')
+
 
 plt.rcParams.update({
     'font.size': 9,
@@ -39,6 +38,32 @@ class ProcessQueue:
         self.input_area = widgets.VBox(())
         self.ui = widgets.HBox([self.select_area,self.input_area])
     
+    def get_list_process(self):
+        list_process = []
+        for i in self.queue:
+            # i: (select_item,input_area,func_and_args)
+            # select_item: widgets.HBox([enabled,selected])
+            # input_area: VBox of [label, text,..., label, text, HTML]
+            # func_and_args: (func, arg_names, arg_defaults)
+            
+            enabled = i[0].children[0].value
+            func,arg_names,arg_defaults = i[2]
+            params = {}
+            for counter in range(len(arg_names)):
+                name = arg_names[counter]
+                label = i[1].children[counter*2].value
+                if name != label:
+                    raise Exception("Error parameters.")
+                val_default = arg_defaults[counter]
+                val_str = i[1].children[counter*2+1].value
+                if type(val_default)==str:
+                    val = val_str
+                else:
+                    val = ast.literal_eval(val_str)
+                params[name] = val
+            list_process.append((func,enabled,params))  
+        return list_process
+    
     def add(self,name,func_and_args):
         '''
         name: name of the function
@@ -57,8 +82,13 @@ class ProcessQueue:
         input_list = []
         
         for arg_name, arg_default in zip(func_and_args[1],func_and_args[2]):
-            input_list.append(widgets.Label(value=arg_name,layout=LAYOUT_LABEL))
-            _ = widgets.Text(value=str(arg_default),continuous_update=False,layout=LAYOUT_INPUT)
+            # label for the parameter
+            input_list.append(widgets.Label(value=arg_name,layout=widgets.Layout(height='25px',padding='0px',width='100px')))
+            # widget of the parameter
+            if type(arg_default) == str and '\n' in arg_default:
+                 _ = widgets.Textarea(value=str(arg_default),continuous_update=False,layout=widgets.Layout(height='100px',padding='0px',width='100px'))
+            else:
+                _ = widgets.Text(value=str(arg_default),continuous_update=False,layout=widgets.Layout(height='25px',padding='0px',width='100px'))
             _.observe(self.parent.on_data_change,'value')
             input_list.append(_)
 
@@ -149,6 +179,7 @@ class Operations:
     def __init__(self,main_ui):
         self.main_ui = main_ui
         self.functions = self.get_functions()# A dictionary of functions in operation module. {fun_name: (func_callable,arg_names,arg_defaults),...}
+
         
         # Function list for selecting
         self.sel_funcs = widgets.Select(options=self.functions.keys(),description='')
@@ -175,39 +206,14 @@ class Operations:
 
         
     def on_data_change(self,change=None):
-        # get the process function
-        
         # Operation function change, cols change, or after loading data
-        func_list = []
-        for i in self.pq.queue:
-            # i: (select_item,input_area,func_and_args)
-            # select_item: widgets.HBox([enabled,selected])
-            # input_area: VBox of [label, text,..., label, text, HTML]
-            # func_and_args: (func, arg_names, arg_defaults)
-            
-            is_enabled = i[0].children[0].value
-            if is_enabled:
-                func,arg_names,arg_defaults = i[2]
-
-                params = {}
-                for counter in range(len(arg_names)):
-                    name = arg_names[counter]
-                    label = i[1].children[counter*2].value
-                    if name != label:
-                        raise Exception("Error parameters.")
-                    val_default = arg_defaults[counter]
-                    val_str = i[1].children[counter*2+1].value
-                    if type(val_default)==str:
-                        val = val_str
-                    else:
-                        val = ast.literal_eval(val_str)
-                    params[name] = val
-                    
-                func_list.append((func,params))
-            
+        
+        list_process = self.pq.get_list_process()
+        
         def process_function(d):
-            for i,j in func_list:
-                d = i(d,**j)
+            for func,enabled,params in list_process:
+                if enabled:
+                    d = func(d,**params)
             return d
         
         # get columns
@@ -246,10 +252,8 @@ class Operations:
     
     def on_add(self,event):
         name = self.sel_funcs.value
-        self.pq.add(name,self.functions[name])    
+        self.pq.add(name,self.functions[name])
 
-        
-        
         
         
         
@@ -674,17 +678,23 @@ class Player:
             self.save_data_raw()
     
     def save_data_figure(self):
+        
         self.html_info.value = 'Saving...'
         
         d_type = self.dd_data_type.value
-
+        
         fname = self.d.filename
-        fname = os.path.splitext(fname)[0]
-        fname = '%s/%s.2d.%s'%(self.export_folder,fname,d_type)
+        fname = f'{self.export_folder}/{os.path.splitext(fname)[0]}.2d'
         
-        self.d.save_data(fname,self.d.data,self.d.labels)
+        fname_state = f'{fname}.state.json'
+        fname = f'{fname}.{d_type}'
         
-        self.html_info.value = 'File saved: %s'%(fname)
+        
+        self.d.save_data(fname,self.d.raw_data,self.d.raw_labels)
+        self.save_state(fname_state)
+        
+        self.html_info.value = f'File saved: {fname}<br>{fname_state}'
+
         
     def save_data_cuts(self):
         self.html_info.value = 'Saving...'
@@ -711,9 +721,38 @@ class Player:
         d_type = self.dd_data_type.value
         
         fname = self.d.filename
-        fname = os.path.splitext(fname)[0]
-        fname = '%s/%s.raw.%s'%(self.export_folder,fname,d_type)
+        fname = f'{self.export_folder}/{os.path.splitext(fname)[0]}.raw'
+        
+        fname_operations = f'{fname}.operations.json'
+        fname_state = f'{fname}.state.json'
+        fname = f'{fname}.{d_type}'
+        
         
         self.d.save_data(fname,self.d.raw_data,self.d.raw_labels)
+        self.save_state(fname_state)
+        self.save_operations(fname_operations)
         
-        self.html_info.value = 'File saved: %s'%(fname)
+        self.html_info.value = f'File saved: {fname}<br>{fname_state}<br>{fname_operations}'
+        
+    def save_operations(self, fpath):
+        list_process = self.operations.pq.get_list_process()
+        dict_process = dict([(i[0].__name__, {'enabled':i[1], 'params':i[2]}) for i in list_process])# i: func, enabled, dict_params
+        fpath = f'{os.path.splitext(fpath)[0]}.json' 
+        if dict_process:
+            with open(fpath, 'w') as f:
+                f.write(json.dumps(dict_process, indent=4))
+            
+    def save_state(self, fpath):
+
+        toolbox2 = self.toolboxes.children[0]# self.toolboxes: widgets.Box([toolbox2,toolbox1])
+        dict_state = {}
+        for hb in toolbox2.children:# hboxes
+            if 'children' in hb.keys:
+                for w in hb.children:# widgets
+                    if hasattr(w,'value'):# for dropdowns 'value' in w.keys is False
+                        dict_state[w.description] = w.value
+        with open(fpath, 'w') as f:
+            f.write(json.dumps(dict_state, indent=4))
+                
+        
+        
