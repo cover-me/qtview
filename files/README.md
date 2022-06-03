@@ -10,8 +10,9 @@ Binder (code run on an online server, may take minutes to initialize, fast after
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cover-me/qtview/main?labpath=content%2FExample%20interactive%20plot.ipynb)
 
+Snapshot:
 
-![image](https://user-images.githubusercontent.com/22870592/170893035-82dd74b5-9790-4ab7-b71a-dfcf98386990.png)
+![image](https://user-images.githubusercontent.com/22870592/171963650-ce48c7fa-4c49-4e1c-82b7-b7d984062ca5.png)
 
 
 
