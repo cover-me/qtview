@@ -38,6 +38,7 @@ class Data2d:
         self.filename = ''
         self.raw_labels = None
         self.raw_data = None
+        self.qtlab_settings = {}
     
         # values updated after process_data
         self.columns = None
@@ -50,6 +51,7 @@ class Data2d:
         Data structure: d = [a1,a2,a3,...], a_i is 2d (heatmaps) or 1d (curves).
         """
         self.reset()
+        self.load_qtlab_settings(fpath)
         
         if fpath.endswith('.mtx'):
             self.load_mtx(fpath)
@@ -210,7 +212,7 @@ class Data2d:
             data_dict[labels[0]] = np.array([x0,x1,xsize])
             data_dict[labels[1]] = np.array([y0,y1,ysize])
         np.savez(fpath,**data_dict)
-        print('NPZ data saved: %s'%fpath)
+        # print('NPZ data saved: %s'%fpath)
 
         
     def are_xy_on_grid(self,X,Y):
@@ -302,7 +304,7 @@ class Data2d:
             # data
             Z.T.ravel().tofile(f)
             
-            print('MTX data saved: %s'%fpath)
+            # print('MTX data saved: %s'%fpath)
 
     def save_dat(self,fpath,data,labels):
         if not len(data)==3:
@@ -327,7 +329,7 @@ class Data2d:
         meta += '\n'
 
         np.savetxt(fpath,data.reshape((3,-1)).T,fmt='%.12e',delimiter='\t',header=meta,comments='')
-        print('DAT data saved: %s'%fpath)
+        # print('DAT data saved: %s'%fpath)
             
     def save_data(self,fpath,data,labels):
         if fpath.endswith('.mtx'):
@@ -337,7 +339,34 @@ class Data2d:
         elif fpath.endswith('.dat'):
             self.save_dat(fpath,data,labels)
         else:
-            raise('Format not recognized.')    
+            raise('Format not recognized.')
+            
+            
+    def load_qtlab_settings(self,fpath):
+        path, ext = os.path.splitext(fpath)
+        settings_file = path + '.set'
+        self.qtlab_settings = {}
+        if os.path.exists(settings_file):
+            with open(settings_file) as f:
+                lines = f.readlines()
+
+            current_instrument = None
+            for line in lines:
+                line = line.rstrip('\n\t\r')
+                if line == '':
+                    continue
+                if not line.startswith('\t'):
+                    name, value = line.split(': ', 1)
+                    if (line.startswith('Filename: ') or
+                       line.startswith('Timestamp: ')):
+                        self.qtlab_settings[name] = value
+                    else:
+                        current_instrument = value
+                        self.qtlab_settings[current_instrument] = {}
+                else:
+                    param, value = line.split(': ', 1)
+                    param = param.strip()
+                    self.qtlab_settings[current_instrument][param] = value
     
  
     

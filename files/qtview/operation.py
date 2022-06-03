@@ -195,14 +195,14 @@ def crop(d, left=0, right=-1, bottom=0, top=-1):
     else:
         raise ValueError('Invalid crop parameters: (%s,%s,%s,%s)'%(left,right,bottom,top))
 
-def abs_z(d):
+def abs_(d):
     '''
     d = [X,Y,Z,...]. Take the absolute value of Z.
     '''
     d[2] = np.abs(d[2])
     return d
 
-def log10_z(d):
+def log10(d):
     '''
     d = [X,Y,Z,...]. Calculate log10(Z).
     '''
