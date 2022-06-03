@@ -1,5 +1,5 @@
 from . import data, operation, plot
-import os,inspect,ast,sys,zipfile,json
+import os,inspect,ast,sys,zipfile,json,textwrap
 import matplotlib as mpl
 import matplotlib.pylab as plt
 import ipywidgets as widgets
@@ -63,6 +63,30 @@ class ProcessQueue:
                 params[name] = val
             list_process.append((func,enabled,params))  
         return list_process
+    
+    def get_process_str(self):
+        operations = []
+        for i in self.queue:
+            # i: (select_item,input_area,func_and_args)
+            # select_item: widgets.HBox([enabled,selected])
+            # input_area: VBox of [label, text,..., label, text, HTML]
+            # func_and_args: (func, arg_names, arg_defaults)
+            
+            enabled = i[0].children[0].value
+            if enabled:
+                func,arg_names,arg_defaults = i[2]
+                params = []
+                for counter in range(len(arg_names)):
+                    val_default = arg_defaults[counter]
+                    val_str = i[1].children[counter*2+1].value
+                    if type(val_default)==str:
+                        val_str = val_str[0:3]
+                    params.append(val_str)
+                str_params = ','.join(params)
+                str_op = f'{func.__name__}({str_params})'
+                operations.append(str_op)
+                
+        return ';'.join(operations)        
     
     def add(self,name,func_and_args):
         '''
@@ -269,6 +293,7 @@ class Player:
  
         self.d = None# raw data, processed data, and methods for loading data
         self.operations = Operations(self)# provide UI and methods for data processing
+        self.labels = None
         
         self.figures = None
         self.axes = None
@@ -319,9 +344,9 @@ class Player:
         self.html_info = widgets.HTML(value='Left-click on the image to show linecuts.',layout={'width':'auto'})
         
         ## Dropdowns
-        self.dd_folder = widgets.Dropdown(description='Folder',layout={'width':'120px'})# tooltip does not work at this moment
+        self.dd_folder = widgets.Dropdown(description='Folder',layout={'width':'120px'})# tooltip only works for buttons at this moment
         self.dd_folder.observe(self.on_folder_change,'value')
-        self.dd_file = widgets.Dropdown(description='File',layout={'width':'120px'})# tooltip does not work at this moment
+        self.dd_file = widgets.Dropdown(description='File',layout={'width':'120px'})
         self.init_file_list(**kw)
         self.dd_file.observe(self.on_path_change,'value')
         
@@ -333,6 +358,20 @@ class Player:
         
         self.dd_z = widgets.Dropdown(description='Z',layout={'width':'144px'})
         self.dd_z.observe(self.operations.on_data_change,'value')
+        
+        ## text
+        
+        self.txt_x = widgets.Text(value='<x>',description='X label',continuous_update=False,layout={'width':'81px'})
+        self.txt_x.observe(self.set_labels,'value')
+        
+        self.txt_y = widgets.Text(value='<y>',description='Y label',continuous_update=False,layout={'width':'81px'})
+        self.txt_y.observe(self.set_labels,'value')
+        
+        self.txt_z = widgets.Text(value='<z>',description='Z label',continuous_update=False,layout={'width':'81px'})
+        self.txt_z.observe(self.set_labels,'value')
+        
+        self.txt_title = widgets.Text(value='<filename> <operations>',continuous_update=False,description='Title',layout={'width':'85px'})
+        self.txt_title.observe(self.set_labels,'value')
         
         ## Sliders
         self.slider_gamma = widgets.IntSlider(value=0,min=-100,max=100,step=1,description='gamma',layout={'width':'230px'})
@@ -347,9 +386,12 @@ class Player:
         
         self.btn_swp_xy = widgets.Button(description='Swap XY',layout={'width':'80px'})
         self.btn_swp_xy.on_click(self.on_swp_xy)
+
+        self.btn_reset_labels = widgets.Button(description='Reset labels',layout={'width':'95px'})
+        self.btn_reset_labels.on_click(self.reset_labels)
         
-        self.b_reset = widgets.Button(description='Reset C',layout={'width':'70px'})
-        self.b_reset.on_click(self.reset_cmap)
+        self.btn_reset_cmap = widgets.Button(description='Reset C',layout={'width':'70px'})
+        self.btn_reset_cmap.on_click(self.reset_cmap)
         
         self.b_save_data = widgets.Button(description='Save data',layout={'width':'82px'})
         self.b_save_data.on_click(self.save_data)
@@ -367,9 +409,11 @@ class Player:
         self.dd_data_source = widgets.Dropdown(value='figure', options=['figure','linecuts','raw'], description='Save from',disabled=False,layout={'width':'125px'})
         self.dd_plot_method = widgets.Dropdown(options=['imshow (default, faster)','pcolormesh: if XY non-uniformly spaced'], description='Plot by',disabled=False,layout={'width':'125px'})
         
-        widget_lines = [widgets.HBox([self.dd_folder,self.dd_file,self.btn_upload,self.btn_swp_xy])]
+        widget_lines = []
+        widget_lines.append(widgets.HBox([self.dd_folder,self.dd_file,self.btn_upload,self.btn_swp_xy]))
         widget_lines.append(widgets.HBox([self.dd_x,self.dd_y,self.dd_z]))
-        widget_lines.append(widgets.HBox([self.slider_gamma,self.dd_cmap,self.b_reset]))
+        widget_lines.append(widgets.HBox([self.txt_x,self.txt_y,self.txt_z,self.txt_title,self.btn_reset_labels]))
+        widget_lines.append(widgets.HBox([self.slider_gamma,self.dd_cmap,self.btn_reset_cmap]))
         widget_lines.append(widgets.HBox([self.slider_vlim,self.c_auto_reset,self.c_show_cuts]))
         widget_lines.append(widgets.HBox([self.dd_data_type,self.dd_data_source,self.b_save_data,self.dd_plot_method]))
         widget_lines.append(self.html_info)
@@ -388,6 +432,27 @@ class Player:
         
         display(html_sty,self.toolboxes,self.fig_boxes)
         
+        
+    def format_label(self, s):
+        conversions = {
+            '<filename>': self.d.filename,
+            '<operations>': self.operations.pq.get_process_str(),
+            '<x>': self.dd_x.label,
+            '<y>': self.dd_y.label,
+            '<z>': self.dd_z.label,
+            '<return>':'\n',
+            '<\\n>':'\n',
+            '<gamma>':'(%s %s %s)'%(self.slider_gamma.value,self.slider_vlim.lower,self.slider_vlim.upper),
+            '<figsize>':'%s'%(self.figures[0].get_size_inches()),
+        }
+        for old, new in conversions.items():
+            s = s.replace(old, new)
+        for key, item in self.d.qtlab_settings.items():
+            if isinstance(item, dict):
+                for key_, item_ in item.items():
+                    s = s.replace('<%s:%s>'%(key,key_), '%s'%item_)
+        return s
+        
     def init_figures(self):
         plt.ioff()
         a = 1
@@ -403,6 +468,29 @@ class Player:
             # i.canvas.toolbar_visible = True
             i.canvas.toolbar_position = 'left'
             i.canvas.resizable = True
+            
+    def set_labels(self,change=None,refresh=True):
+        ax,axh,axv = self.axes
+        title = self.format_label(self.txt_title.value)
+        title = '\n'.join(textwrap.wrap(title,30, replace_whitespace=False))
+        labels = [self.format_label(i.value) for i in [self.txt_x,self.txt_y,self.txt_z]]
+        self.labels = labels
+        
+        ax.set_title(title)
+        ax.set_xlabel(labels[0])
+        ax.set_ylabel(labels[1])
+        self.im.colorbar.set_label(labels[2])
+        
+        ch = 'tab:blue'
+        cv = 'tab:orange'
+        axh.set_xlabel(labels[0],color=ch)
+        axh.set_ylabel(labels[2],color=ch)
+        axv.set_xlabel(labels[2],color=cv)
+        axv.set_ylabel(labels[1],color=cv)
+        
+        if refresh:# if called twice, figure would disappear in JupyterLite
+            self.redraw_canvas(self.figures)
+        
         
     def on_path_change(self,change=None):
         # fpath can be path, path inside zip, or url (url fetch is limited in JupyterLite, based on js, need to add "await" and run in independent cells)
@@ -507,8 +595,11 @@ class Player:
 
     def redraw_canvas(self,figs):
         if IN_JUPYTER_LITE:
-            for i in figs:
-                i.canvas.draw()
+            if self.counter == 0:# somehow if we canvas.draw() at the first time the figure would disappear.
+                self.counter = 1
+            else:
+                for i in figs:
+                    i.canvas.draw()
             
     def on_show_cuts_change(self,change):
         if not change['new']:
@@ -525,32 +616,33 @@ class Player:
                 x, y = click_event.xdata, click_event.ydata
                 self.data_hcut = operation.linecut(self.d.data,y=y)
                 self.data_vcut = operation.linecut(self.d.data,x=x)
-            hx,hy,hz = np.copy(self.data_hcut.reshape(3,-1))# [X, Y0, Z]
-            vx,vy,vz = np.copy(self.data_vcut.reshape(3,-1))# [X0, Y, Z]
-            self.html_info.value = 'Cuts at (%s,%s)'%(vx[0],hy[0])# may be slightly different from x,y
-            ax,axh,axv = self.axes
+            if self.data_hcut is not None:
+                hx,hy,hz = np.copy(self.data_hcut.reshape(3,-1))# [X, Y0, Z]
+                vx,vy,vz = np.copy(self.data_vcut.reshape(3,-1))# [X0, Y, Z]
+                self.html_info.value = 'Cuts at (%s,%s)'%(vx[0],hy[0])# may be slightly different from x,y
+                ax,axh,axv = self.axes
 
-            if self.lines:
-                l1h,l1v,l2h,l2v = self.lines
-                l1h.set_data(hx,hy)
-                l1v.set_data(vx,vy)
-                l2h.set_data(hx,hz)
-                l2v.set_data(vz,vy)
+                if self.lines:
+                    l1h,l1v,l2h,l2v = self.lines
+                    l1h.set_data(hx,hy)
+                    l1v.set_data(vx,vy)
+                    l2h.set_data(hx,hz)
+                    l2v.set_data(vz,vy)
 
-                z1,z2 = np.nanmin(hz),np.nanmax(hz)
-                dz = (z2-z1)/20
-                axh.set_ylim(z1-dz,z2+dz)
-                
-                z1,z2 = np.nanmin(vz),np.nanmax(vz)
-                dz = (z2-z1)/20                
-                axv.set_xlim(z1-dz,z2+dz)
-            else:
-                # lines = [l1h,l1v,l2h,l2v]
-                self.lines = ax.plot(hx,hy,'tab:blue',vx,vy,'tab:orange')
-                self.lines += axh.plot(hx,hz,'tab:blue')  
-                self.lines += axv.plot(vz,vy,'tab:orange')
-                
-            self.redraw_canvas(self.figures)
+                    z1,z2 = np.nanmin(hz),np.nanmax(hz)
+                    dz = (z2-z1)/20
+                    axh.set_ylim(z1-dz,z2+dz)
+
+                    z1,z2 = np.nanmin(vz),np.nanmax(vz)
+                    dz = (z2-z1)/20                
+                    axv.set_xlim(z1-dz,z2+dz)
+                else:
+                    # lines = [l1h,l1v,l2h,l2v]
+                    self.lines = ax.plot(hx,hy,'tab:blue',vx,vy,'tab:orange')
+                    self.lines += axh.plot(hx,hz,'tab:blue')  
+                    self.lines += axv.plot(vz,vy,'tab:orange')
+
+                self.redraw_canvas(self.figures)
 
         
     def reset_cmap(self,event=None,silent=False):
@@ -562,6 +654,26 @@ class Player:
         if silent:
             self.slider_gamma.observe(self.on_gamma_change,'value')
             self.slider_vlim.observe(self.on_vlim_change,'value')
+
+    def reset_labels(self,event=None,silent=False):
+        self.txt_x.unobserve(self.set_labels,'value')
+        self.txt_y.unobserve(self.set_labels,'value')
+        self.txt_z.unobserve(self.set_labels,'value')
+        self.txt_title.unobserve(self.set_labels,'value')
+        
+        self.txt_x.value = '<x>'
+        self.txt_y.value = '<y>'
+        self.txt_z.value = '<z>'
+        self.txt_title.value = '<filename> <operations>'
+        
+        self.txt_x.observe(self.set_labels,'value')
+        self.txt_y.observe(self.set_labels,'value')
+        self.txt_z.observe(self.set_labels,'value')
+        self.txt_title.observe(self.set_labels,'value')
+        
+        if not silent:
+            self.set_labels()
+            
     
     def updata_vlim_bound_silently(self,reset_value=False):
         z = self.d.data[2]
@@ -592,8 +704,6 @@ class Player:
         axh.spines['right'].set_color(ch)
         axh.tick_params(axis='x', colors=ch)
         axh.tick_params(axis='y', colors=ch)
-        axh.set_xlabel(self.d.labels[0],color=ch)
-        axh.set_ylabel(self.d.labels[2],color=ch)
 
         axv = fig_cut.add_axes(axh.get_position())# ax vertical linecut
         axv.patch.set_visible(False)# otherwise axh is blocked
@@ -605,8 +715,6 @@ class Player:
         axv.spines['left'].set_color(cv)
         axv.tick_params(axis='x', colors=cv)
         axv.tick_params(axis='y', colors=cv)
-        axv.set_xlabel(self.d.labels[2],color=cv)
-        axv.set_ylabel(self.d.labels[1],color=cv)
         
         return axh,axv
         
@@ -620,9 +728,7 @@ class Player:
 
         ax = fig.add_axes([0.28,0.13,0.54,0.72])
         ax_cbar = fig.add_axes([0.84,0.13,0.03,0.72])
-        ax.set_title(self.d.filename)
         axh, axv = self.create_linecut_axes(fig_cut)
-        
         self.axes = [ax,axh,axv]
 
         if self.d:
@@ -632,18 +738,16 @@ class Player:
             is_xy_uniform = False
             if self.dd_plot_method.index == 0:# imshow
                 is_xy_uniform = True
-            kw = {'labels':self.d.labels,'gamma':gm, 'vmin':v0, 'vmax':v1, 'cmap':cmap, 'xyUniform':is_xy_uniform, 'plotCbar':{'cax':ax_cbar}}
+            kw = {'labels':self.d.labels, 'gamma':gm, 'vmin':v0, 'vmax':v1, 'cmap':cmap, 'xyUniform':is_xy_uniform, 'plotCbar':{'cax':ax_cbar}}
             plot.plot2d(self.d.data,fig=fig,ax=ax,**kw)
             self.im = [obj for obj in ax.get_children() if isinstance(obj, mpl.image.AxesImage) or isinstance(obj,mpl.collections.QuadMesh)][0]
+            self.set_labels(refresh=False)
 
             # prepare for linecuts
             axv.set_ylim(ax.get_ylim())
-            axh.set_xlim(ax.get_xlim())
-            
-        if self.counter == 0:# somehow if we canvas.draw() at the first time the figure would disappear.
-            self.counter = 1
-        else:
-            self.redraw_canvas(self.figures)
+            axh.set_xlim(ax.get_xlim())    
+
+        self.redraw_canvas(self.figures)
 
         
     def on_gamma_change(self,change):
@@ -690,7 +794,7 @@ class Player:
         fname = f'{fname}.{d_type}'
         
         
-        self.d.save_data(fname,self.d.raw_data,self.d.raw_labels)
+        self.d.save_data(fname,self.d.data,self.labels)
         self.save_state(fname_state)
         
         self.html_info.value = f'File saved: {fname}<br>{fname_state}'
@@ -707,11 +811,11 @@ class Player:
         
         # vlincut
         fnamev = '%s/%s.vcut.%s'%(self.export_folder,fname,d_type)
-        self.d.save_data(fnamev,self.data_vcut,self.d.labels)# save_data only takes 2d data
+        self.d.save_data(fnamev,self.data_vcut,self.labels)# save_data only takes 2d data
 
         # hlincut
         fnameh = '%s/%s.hcut.%s'%(self.export_folder,fname,d_type)
-        self.d.save_data(fnameh,self.data_hcut,self.d.labels)
+        self.d.save_data(fnameh,self.data_hcut,self.labels)
 
         self.html_info.value = 'Files saved: %s<br>%s'%(fnamev,fnameh)
         
